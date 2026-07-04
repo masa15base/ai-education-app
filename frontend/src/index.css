@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design System */
+@layer base {
+  :root {
+    --background: 250 248 255;
+    --foreground: 42 42 68;
+
+    --card: 253 253 253;
+    --card-foreground: 42 42 68;
+
+    --popover: 255 255 255;
+    --popover-foreground: 42 42 68;
+
+    --primary: 147 197 253;
+    --primary-foreground: 42 42 68;
+
+    --secondary: 249 168 212;
+    --secondary-foreground: 42 42 68;
+
+    --muted: 246 249 252;
+    --muted-foreground: 100 116 139;
+
+    --accent: 196 181 253;
+    --accent-foreground: 42 42 68;
+
+    --destructive: 239 68 68;
+    --destructive-foreground: 248 250 252;
+
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 147 197 253;
+
+    --radius: 1.5rem;
+
+    --lavender-soft: 230 220 250;
+    --mint-soft: 200 245 225;
+    --sky-soft: 200 235 255;
+    --pink-soft: 255 225 235;
+    --navy-dark: 30 30 60;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-gradient-to-br from-lavender-soft via-mint-soft to-sky-soft text-foreground;
+    font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* 黒背景＋白文字の共通ボタンスタイル */
+  .kid-button {
+    @apply bg-black text-white font-bold py-4 px-8 rounded-full text-xl shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95;
+  }
+
+  .quiz-button {
+    @apply bg-black text-white font-bold py-6 px-10 rounded-3xl text-xl shadow-md hover:scale-105 hover:shadow-lg;
+  }
+
+  .chat-bubble {
+    @apply bg-black text-white font-bold py-6 px-8 rounded-full text-xl shadow-md hover:scale-105 hover:shadow-lg transition-all duration-300;
+  }
+
+  .kid-card {
+    @apply bg-white backdrop-blur-sm rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300;
+  }
+
+  .character-display {
+    @apply relative bg-gradient-to-br from-sky-soft to-white rounded-full p-8 shadow-inner;
+  }
+
+  .level-badge {
+    @apply absolute -top-2 -right-2 bg-gradient-to-r from-lavender-soft to-purple-soft text-white font-bold px-4 py-2 rounded-full text-lg shadow-md border-2 border-white;
+  }
+
+  .experience-bar {
+    @apply bg-gradient-to-r from-yellow-300 via-orange-300 to-purple-400 h-4 rounded-full transition-all duration-500;
+  }
+
+  .steps-visual {
+    @apply flex items-center justify-center gap-4 p-4 bg-gradient-to-r from-mint-soft to-sky-soft rounded-2xl;
+  }
+}
