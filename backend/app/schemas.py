@@ -99,6 +99,20 @@ class StatsTimelineItem(BaseModel):
     kind: str = "quiz_session"
 
 
+class StatsDailyActivity(BaseModel):
+    date: str
+    quiz_sessions: int = 0
+    average_score: Optional[float] = None
+
+
+class StatsSubjectBreakdown(BaseModel):
+    subject: str
+    sessions_week: int = 0
+    average_score_week: Optional[float] = None
+    answers_count_week: int = 0
+    answer_accuracy_week: Optional[float] = None
+
+
 class StatsCharacterBrief(BaseModel):
     display_name: str
     experience: int
@@ -116,6 +130,8 @@ class StatsSummary(BaseModel):
     answer_accuracy_week: Optional[float] = None
     character: Optional[StatsCharacterBrief] = None
     timeline: List[StatsTimelineItem] = []
+    weekly_activity: List[StatsDailyActivity] = []
+    subject_breakdown: List[StatsSubjectBreakdown] = []
     steps_goal: int = 5000
     steps_today: Optional[int] = None
     steps_ymd: Optional[str] = None
@@ -141,6 +157,20 @@ class StepsPutOut(BaseModel):
     today_ymd: str
     steps: int
     source: str
+
+
+class StepsWeekDayOut(BaseModel):
+    date: str
+    steps: int = 0
+    goal_reached: bool = False
+
+
+class StepsWeekOut(BaseModel):
+    authenticated: bool
+    today_ymd: str
+    goal_steps: int = 5000
+    source: str = "none"
+    days: List[StepsWeekDayOut] = []
 
 
 class CharacterNextEvolution(BaseModel):

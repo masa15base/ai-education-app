@@ -8,6 +8,20 @@ export type StatsTimelineItem = {
   kind: string;
 };
 
+export type StatsDailyActivity = {
+  date: string;
+  quiz_sessions: number;
+  average_score: number | null;
+};
+
+export type StatsSubjectBreakdown = {
+  subject: string;
+  sessions_week: number;
+  average_score_week: number | null;
+  answers_count_week: number;
+  answer_accuracy_week: number | null;
+};
+
 export type StatsCharacterBrief = {
   display_name: string;
   experience: number;
@@ -25,6 +39,8 @@ export type StatsSummary = {
   answer_accuracy_week: number | null;
   character: StatsCharacterBrief | null;
   timeline: StatsTimelineItem[];
+  weekly_activity: StatsDailyActivity[];
+  subject_breakdown: StatsSubjectBreakdown[];
   steps_goal: number;
   steps_today: number | null;
   steps_ymd: string | null;

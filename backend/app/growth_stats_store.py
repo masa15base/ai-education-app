@@ -202,9 +202,13 @@ def apply_activity(
     prev_stage = determine_character_stage(stats, _char_exp(db, uid))
 
     t = (activity.get("activity_type") or "").strip()
-    exp_gained = calculate_exp(activity)
-    if t == "login" and stats.get("last_login_ymd") == ymd:
+    # skip_exp: クイズ完了で progress 側が既に XP 付与した場合の二重加算防止
+    if activity.get("skip_exp"):
         exp_gained = 0
+    else:
+        exp_gained = calculate_exp(activity)
+        if t == "login" and stats.get("last_login_ymd") == ymd:
+            exp_gained = 0
 
     char = db.query(models.UserCharacter).filter(models.UserCharacter.user_id == uid).first()
     if char and exp_gained > 0:
@@ -287,8 +291,13 @@ def apply_activity_memory(uid: str, activity: dict[str, Any]) -> dict[str, Any]:
     stats = {**default_stats(), **_memory.get(uid, {})}
     ymd = _utc_now().strftime("%Y-%m-%d")
     prev_stage = determine_character_stage(stats, int(stats.get("character_exp") or 0))
-    exp_gained = calculate_exp(activity)
     t = (activity.get("activity_type") or "").strip()
+    if activity.get("skip_exp"):
+        exp_gained = 0
+    else:
+        exp_gained = calculate_exp(activity)
+        if t == "login" and stats.get("last_login_ymd") == ymd:
+            exp_gained = 0
 
     if t == "quiz_complete":
         stats["quiz_correct_count"] = int(stats.get("quiz_correct_count") or 0) + int(

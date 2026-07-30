@@ -1,5 +1,6 @@
 import { getAuth } from 'firebase/auth';
 import { getApiBase } from './apiBase';
+import type { NextEvolutionInfo } from './growthDisplay';
 
 export type CharacterGrowthStatus = {
   character_id: string;
@@ -22,7 +23,7 @@ export type CharacterGrowthStatus = {
   mood: string;
   home_action: string;
   message: string;
-  next_evolution: Record<string, unknown>;
+  next_evolution: NextEvolutionInfo;
   current_stage_image?: string | null;
   hero_preview_url?: string | null;
   next_stage_preview_url?: string | null;
@@ -77,10 +78,5 @@ export const HOME_ACTION_ANIM: Record<string, string> = {
   sleeping: 'animate-char-sleeping',
 };
 
-export const STAGE_EMOJI: Record<string, string> = {
-  egg: '🥚',
-  baby: '🌱',
-  child: '🐣',
-  student: '📚',
-  hero: '⭐',
-};
+/** @deprecated prefer STAGE_EMOJI from growthDisplay */
+export { STAGE_EMOJI } from './growthDisplay';

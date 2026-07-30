@@ -105,20 +105,38 @@ def complete_quiz(
     pct = round((correct_n / n) * 100) if n else 0
 
     growth_result = None
+    rewards: dict = {"gained_xp": 0, "experience": None, "level": None}
+
     if uid:
+        # XP 一本化: progress（日次上限）が唯一の付与元。growth はカウント・連続日数のみ。
+        rewards = save_quiz_session(
+            uid, body.subject, body.level, pct, details, skip_xp=False
+        )
+        db_mode = rewards.get("experience") is not None
         growth_result = record_activity(
             uid,
             {
                 "activity_type": "quiz_complete",
                 "correct_count": correct_n,
                 "total_count": n,
+                "level": body.level,
+                # DB あり: progress が既に UserCharacter.experience を更新済み
+                # DB なし（メモリ）: growth 側で同式の XP を付与
+                "skip_exp": db_mode,
             },
         )
-        rewards = save_quiz_session(
-            uid, body.subject, body.level, pct, details, skip_xp=True
-        )
-    else:
-        rewards = {"gained_xp": 0, "experience": None, "level": None}
+        if db_mode:
+            # FE / growth レスポンスも progress の付与値に揃える
+            progress_xp = int(rewards.get("gained_xp") or 0)
+            growth_result = {**growth_result, "exp_gained": progress_xp}
+
+    display_xp = (
+        int((growth_result or {}).get("exp_gained") or 0)
+        if growth_result
+        else 0
+    )
+    if uid and rewards.get("experience") is not None:
+        display_xp = int(rewards.get("gained_xp") or 0)
 
     out: dict = {
         "score_percent": pct,
@@ -126,14 +144,20 @@ def complete_quiz(
         "total": n,
         "details": details,
         "saved": bool(uid),
-        "gained_xp": rewards.get("gained_xp", 0) if uid else 0,
+        "gained_xp": display_xp,
     }
     if uid:
         out["experience"] = rewards.get("experience")
         out["level"] = rewards.get("level")
+        if out["experience"] is None and growth_result:
+            out["experience"] = growth_result.get("character_exp")
+            from ..schemas import character_level_from_xp
+
+            exp = int(out["experience"] or 0)
+            out["level"] = character_level_from_xp(exp)
     if growth_result:
         out["growth"] = {
-            "exp_gained": growth_result.get("exp_gained", 0),
+            "exp_gained": int(growth_result.get("exp_gained") or 0),
             "stage": growth_result.get("stage"),
             "evolved": growth_result.get("evolved"),
             "previous_stage": growth_result.get("previous_stage"),

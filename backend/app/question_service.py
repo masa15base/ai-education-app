@@ -78,3 +78,42 @@ def get_question_by_id(question_id: str) -> Optional[dict[str, Any]]:
         return question_row_to_api(row) if row else None
     finally:
         db.close()
+
+
+def questions_for_quiz(subject: str, level: int, limit: int) -> list[dict[str, Any]]:
+    """
+    questions テーブルを優先し、件数不足時は quiz_engine の動的問題で埋める。
+    算数・英語も含む全教科共通。
+    """
+    from .quiz_engine import make_question, make_questions
+
+    lim = max(1, min(int(limit), 20))
+    db_rows = list_questions_for_quiz(subject, level, lim)
+    if len(db_rows) >= lim:
+        return db_rows[:lim]
+
+    dynamic = make_questions(subject, level, lim)
+    if not db_rows:
+        return dynamic
+
+    merged = list(db_rows)
+    used_ids = {str(r.get("id")) for r in merged}
+    for q in dynamic:
+        if len(merged) >= lim:
+            break
+        qid = str(q.get("id") or "")
+        if qid and qid not in used_ids:
+            merged.append(q)
+            used_ids.add(qid)
+
+    # まだ足りない場合（ID 衝突など）はインデックスをずらして補充
+    extra_i = lim + 1
+    while len(merged) < lim and extra_i <= lim + 30:
+        q = make_question(subject, level, extra_i)
+        extra_i += 1
+        qid = str(q.get("id") or "")
+        if qid and qid not in used_ids:
+            merged.append(q)
+            used_ids.add(qid)
+
+    return merged[:lim]

@@ -33,6 +33,7 @@ export type Item = {
   level: number;
   score: number;
   updated_at?: string;
+  gained_xp?: number;
 };
 
 // 保存（UPSERT）
@@ -89,10 +90,23 @@ export async function postQuizComplete(
     correct: number;
     total: number;
     saved: boolean;
-    details: unknown[];
+    details: Array<{
+      question_index: number;
+      question_id?: string;
+      selected_answer: string;
+      correct_answer: string;
+      correct: boolean;
+      hint?: string;
+    }>;
     gained_xp: number;
     experience?: number | null;
     level?: number | null;
+    growth?: {
+      exp_gained?: number;
+      stage?: string;
+      evolved?: boolean;
+      previous_stage?: string | null;
+    };
   }>;
 }
 

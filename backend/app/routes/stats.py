@@ -12,7 +12,14 @@ from .. import models
 from ..db import get_db_optional
 from ..deps import get_optional_uid
 from ..progress_service import list_progress
-from ..schemas import StatsCharacterBrief, StatsSummary, StatsTimelineItem, character_level_from_xp
+from ..schemas import (
+    StatsCharacterBrief,
+    StatsDailyActivity,
+    StatsSubjectBreakdown,
+    StatsSummary,
+    StatsTimelineItem,
+    character_level_from_xp,
+)
 from ..steps_service import get_steps_today
 
 router = APIRouter(tags=["stats"])
@@ -41,6 +48,77 @@ def _to_utc_iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat()
 
 
+def _day_keys_utc(days: int = 7) -> list[str]:
+    now = datetime.now(timezone.utc)
+    return [
+        (now - timedelta(days=offset)).strftime("%Y-%m-%d")
+        for offset in range(days - 1, -1, -1)
+    ]
+
+
+def _build_weekly_activity(
+    sessions: list[tuple[datetime, float]],
+    days: int = 7,
+) -> list[StatsDailyActivity]:
+    keys = _day_keys_utc(days)
+    buckets: dict[str, list[float]] = {k: [] for k in keys}
+    for dt, score in sessions:
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        key = dt.astimezone(timezone.utc).strftime("%Y-%m-%d")
+        if key in buckets:
+            buckets[key].append(score)
+    return [
+        StatsDailyActivity(
+            date=key,
+            quiz_sessions=len(buckets[key]),
+            average_score=(
+                round(sum(buckets[key]) / len(buckets[key]), 1)
+                if buckets[key]
+                else None
+            ),
+        )
+        for key in keys
+    ]
+
+
+def _build_subject_breakdown(
+    sessions: list[tuple[str, float]],
+    logs: list[tuple[str, bool]],
+) -> list[StatsSubjectBreakdown]:
+    session_map: dict[str, list[float]] = {}
+    for subject, score in sessions:
+        subj = (subject or "").strip() or "unknown"
+        session_map.setdefault(subj, []).append(score)
+
+    log_map: dict[str, list[bool]] = {}
+    for subject, correct in logs:
+        subj = (subject or "").strip() or "unknown"
+        log_map.setdefault(subj, []).append(correct)
+
+    subjects = sorted(set(session_map) | set(log_map))
+    rows: list[StatsSubjectBreakdown] = []
+    for subj in subjects:
+        scores = session_map.get(subj, [])
+        answers = log_map.get(subj, [])
+        correct = sum(1 for ok in answers if ok)
+        rows.append(
+            StatsSubjectBreakdown(
+                subject=subj,
+                sessions_week=len(scores),
+                average_score_week=(
+                    round(sum(scores) / len(scores), 1) if scores else None
+                ),
+                answers_count_week=len(answers),
+                answer_accuracy_week=(
+                    round((correct / len(answers)) * 100, 1) if answers else None
+                ),
+            )
+        )
+    rows.sort(key=lambda r: (-r.sessions_week, r.subject))
+    return rows
+
+
 def _stats_from_memory(uid: str, timeline_limit: int) -> StatsSummary:
     items_raw, total = list_progress(uid)
     parsed: list[tuple[datetime, dict]] = []
@@ -59,6 +137,16 @@ def _stats_from_memory(uid: str, timeline_limit: int) -> StatsSummary:
         round(sum(int(row.get("score") or 0) for _, row in in_week) / len(in_week), 1)
         if in_week
         else 0.0
+    )
+
+    week_sessions = [
+        (d, float(row.get("score") or 0))
+        for d, row in in_week
+    ]
+    weekly_activity = _build_weekly_activity(week_sessions)
+    subject_breakdown = _build_subject_breakdown(
+        [(str(row.get("subject") or ""), float(row.get("score") or 0)) for _, row in in_week],
+        [],
     )
 
     timeline: list[StatsTimelineItem] = []
@@ -84,6 +172,8 @@ def _stats_from_memory(uid: str, timeline_limit: int) -> StatsSummary:
         answer_accuracy_week=None,
         character=None,
         timeline=timeline,
+        weekly_activity=weekly_activity,
+        subject_breakdown=subject_breakdown,
         steps_goal=5000,
         steps_today=st,
         steps_ymd=day,
@@ -158,6 +248,22 @@ def stats_summary(
         round((correct_week / len(logs_week)) * 100, 1) if logs_week else None
     )
 
+    def _as_utc(dt: datetime) -> datetime:
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+
+    week_sessions_db = [
+        (_as_utc(p.created_at), float(p.score))
+        for p in sessions_week
+        if p.created_at
+    ]
+    weekly_activity = _build_weekly_activity(week_sessions_db)
+    subject_breakdown = _build_subject_breakdown(
+        [(p.subject or "", float(p.score)) for p in sessions_week],
+        [(l.subject or "", bool(l.correct)) for l in logs_week],
+    )
+
     char_row = db.query(models.UserCharacter).filter_by(user_id=uid).first()
     character = None
     if char_row:
@@ -180,6 +286,8 @@ def stats_summary(
         answer_accuracy_week=answer_accuracy_week,
         character=character,
         timeline=timeline,
+        weekly_activity=weekly_activity,
+        subject_breakdown=subject_breakdown,
         steps_goal=5000,
         steps_today=st,
         steps_ymd=day,

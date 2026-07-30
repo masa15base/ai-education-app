@@ -7,9 +7,9 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 
 from ..deps import get_current_uid, get_optional_uid
-from ..schemas import StepsPutIn, StepsPutOut, StepsTodayOut
+from ..schemas import StepsPutIn, StepsPutOut, StepsTodayOut, StepsWeekDayOut, StepsWeekOut
 from ..growth_stats_store import record_activity
-from ..steps_service import get_steps_today, set_steps_today
+from ..steps_service import get_steps_today, list_steps_week, set_steps_today
 
 DEFAULT_STEPS_GOAL = 5000
 
@@ -57,3 +57,31 @@ def steps_today_put(body: StepsPutIn, uid: str = Depends(get_current_uid)):
             },
         )
     return StepsPutOut(today_ymd=day, steps=n, source=src)
+
+
+@router.get("/week", response_model=StepsWeekOut)
+def steps_week(uid: str | None = Depends(get_optional_uid)):
+    day = _ymd_utc()
+    if not uid:
+        from ..steps_service import _day_keys_utc
+
+        empty_days = [
+            StepsWeekDayOut(date=d, steps=0, goal_reached=False)
+            for d in _day_keys_utc(7)
+        ]
+        return StepsWeekOut(
+            authenticated=False,
+            today_ymd=day,
+            goal_steps=DEFAULT_STEPS_GOAL,
+            source="none",
+            days=empty_days,
+        )
+
+    rows, src = list_steps_week(uid, goal_steps=DEFAULT_STEPS_GOAL)
+    return StepsWeekOut(
+        authenticated=True,
+        today_ymd=day,
+        goal_steps=DEFAULT_STEPS_GOAL,
+        source=src,
+        days=[StepsWeekDayOut(**row) for row in rows],
+    )

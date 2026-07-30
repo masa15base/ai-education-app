@@ -65,6 +65,51 @@
     @apply bg-black text-white font-bold py-6 px-10 rounded-3xl text-xl shadow-md hover:scale-105 hover:shadow-lg;
   }
 
+  .quiz-pop {
+    animation: quiz-pop 0.35s ease-out;
+  }
+
+  .quiz-shake {
+    animation: quiz-shake 0.4s ease-out;
+  }
+
+  @keyframes quiz-pop {
+    0% { transform: scale(0.85); opacity: 0.6; }
+    60% { transform: scale(1.08); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes quiz-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .steps-celebrate-pop {
+    animation: steps-celebrate-pop 0.55s ease-out;
+  }
+
+  @keyframes steps-celebrate-pop {
+    0% { transform: scale(0.92); }
+    45% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  .steps-confetti {
+    background-image:
+      radial-gradient(circle, hsl(199 89% 48% / 0.35) 2px, transparent 2px),
+      radial-gradient(circle, hsl(142 71% 45% / 0.35) 2px, transparent 2px),
+      radial-gradient(circle, hsl(45 93% 47% / 0.35) 2px, transparent 2px);
+    background-size: 24px 24px, 32px 32px, 28px 28px;
+    background-position: 0 0, 12px 12px, 6px 18px;
+    animation: steps-confetti-fade 4s ease-out forwards;
+  }
+
+  @keyframes steps-confetti-fade {
+    0% { opacity: 0.85; }
+    100% { opacity: 0; }
+  }
+
   .chat-bubble {
     @apply bg-black text-white font-bold py-6 px-8 rounded-full text-xl shadow-md hover:scale-105 hover:shadow-lg transition-all duration-300;
   }

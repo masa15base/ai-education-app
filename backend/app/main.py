@@ -20,8 +20,7 @@ from pydantic import BaseModel, Field
 from .deps import get_current_uid, init_firebase
 from .security_settings import is_production_hardened
 from .progress_service import append_progress, list_progress
-from .question_service import list_questions_for_quiz
-from .quiz_engine import make_questions
+from .question_service import questions_for_quiz
 from .routes import (
     answers,
     character as character_routes,
@@ -192,30 +191,15 @@ def connection_diagnostic() -> dict[str, Any]:
     return _health_diagnostic_payload()
 
 
-def _norm_subject_key(subject: str) -> str:
-    s = (subject or "").strip().lower()
-    if s in ("english", "英語", "eigo"):
-        return "english"
-    if s in ("math", "算数", "sansuu"):
-        return "math"
-    return s
-
-
 @app.get("/api/questions")
 def get_questions(subject: str, level: int, limit: int = 5):
     """
-    英語・算数: 常に `quiz_engine` の動的生成（英語4択・算数4択）。
-    その他の教科のみ JawsDB の `questions` を参照し、不足時は動的生成にフォールバック。
+    JawsDB の `questions` を優先（算数・英語含む）。
+    件数不足や DB 未設定時は `quiz_engine` の動的生成で補完。
     """
     try:
         lim = max(1, min(int(limit), 10))
-        key = _norm_subject_key(subject)
-        if key in ("english", "math"):
-            return make_questions(subject, level, lim)
-        db_rows = list_questions_for_quiz(subject, level, lim)
-        if len(db_rows) >= lim:
-            return db_rows[:lim]
-        return make_questions(subject, level, lim)
+        return questions_for_quiz(subject, level, lim)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"questions error: {e}")
 

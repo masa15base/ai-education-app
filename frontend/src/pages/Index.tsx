@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
@@ -22,13 +22,18 @@ import { characterVisualTier, DEFAULT_STEPS_GOAL } from '@/lib/growthRules';
 import { cn } from '@/lib/utils';
 import { fetchQuizSessionToday } from '@/lib/cloudQuizApi';
 import { postSyncStepsXp } from '@/lib/api';
-import { fetchStepsToday, putStepsToday } from '@/lib/stepsApi';
+import { fetchStepsToday } from '@/lib/stepsApi';
+import { StepsPanel } from '@/components/StepsPanel';
 import {
   fetchCharacterGrowthStatus,
   HOME_ACTION_ANIM,
-  STAGE_EMOJI,
   type CharacterGrowthStatus,
 } from '@/lib/characterStatusApi';
+import { STAGE_EMOJI } from '@/lib/growthDisplay';
+import {
+  EvolutionProgressCard,
+  GrowthStageRoadmap,
+} from '@/components/GrowthProgress';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -44,6 +49,7 @@ const Index = () => {
   const [authHint, setAuthHint] = useState<string | null>(null);
   const [stepsGoal, setStepsGoal] = useState(DEFAULT_STEPS_GOAL);
   const [todaySteps, setTodaySteps] = useState(0);
+  const [stepsYmd, setStepsYmd] = useState<string | null>(null);
   const [pullSettled, setPullSettled] = useState(false);
   const [quizToday, setQuizToday] = useState<{
     has_session_today: boolean;
@@ -85,7 +91,9 @@ const Index = () => {
     character.nextEvolutionPreviewUrl ??
     null;
   const nextStageName = String(
-    growthStatus?.next_evolution?.next_stage ?? '',
+    growthStatus?.next_evolution?.next_stage_label ??
+      growthStatus?.next_evolution?.next_stage ??
+      '',
   );
 
   useEffect(() => {
@@ -124,6 +132,7 @@ const Index = () => {
       const snap = await fetchStepsToday(token);
       if (snap.authenticated && typeof snap.steps === 'number') {
         setTodaySteps(snap.steps);
+        setStepsYmd(snap.today_ymd);
         if (
           typeof snap.goal_steps === 'number' &&
           snap.goal_steps >= 1000
@@ -182,6 +191,22 @@ const Index = () => {
     void fetchCharacterGrowthStatus().then(setGrowthStatus);
   }, [authHint, uiTick]);
 
+  /** ステージが進んだときだけお祝い（初回ロードでは出さない） */
+  const prevGrowthStageRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!growthStatus?.stage) return;
+    const stage = growthStatus.stage;
+    const prev = prevGrowthStageRef.current;
+    if (prev && prev !== stage) {
+      toast({
+        title: `進化したよ！${growthStatus.stage_label}になった！`,
+        description: `${STAGE_EMOJI[stage] ?? '✨'} がんばったね`,
+        duration: 4500,
+      });
+    }
+    prevGrowthStageRef.current = stage;
+  }, [growthStatus]);
+
   /** 歩数ボーナス XP（サーバー DB で冪等） */
   useEffect(() => {
     if (!pullSettled || !authHint) return;
@@ -217,8 +242,19 @@ const Index = () => {
       }
     : null;
 
-  const stepsToGoal = Math.max(0, stepsGoal - todaySteps);
-  const isStepsGoalReached = todaySteps >= stepsGoal;
+  const resumeQuizPath = (() => {
+    if (!todayQuizSnap) return null;
+    const subj =
+      todayQuizSnap.subject === 'english' ? 'english' : 'math';
+    const nextLevel =
+      todayQuizSnap.scorePercent >= 100
+        ? Math.min(10, todayQuizSnap.level + 1)
+        : todayQuizSnap.level;
+    return `/quiz?subject=${subj}&level=${nextLevel}`;
+  })();
+
+  const quizStreakDays = growthStatus?.quiz_streak_days ?? 0;
+  const quizGoalDone = hasQuizToday || Boolean(growthStatus?.quiz_today);
 
   const handleViewProgress = () => {
     navigate('/character-log');
@@ -319,8 +355,12 @@ const Index = () => {
               {STAGE_EMOJI[growthStage] ?? '✨'} {growthStageLabel}
             </span>
             {growthStatus?.mood && (
-              <span className="rounded-full bg-mint-soft/50 px-3 py-1 text-xs text-navy-dark">
-                mood: {growthStatus.mood}
+              <span className="rounded-full bg-mint-soft/50 px-3 py-1 text-xs font-bold text-navy-dark">
+                {growthStatus.mood === 'excited' || growthStatus.mood === 'happy'
+                  ? 'きょうのきぶん: うれしい'
+                  : growthStatus.mood === 'sleepy'
+                    ? 'きょうのきぶん: ねむい'
+                    : 'きょうのきぶん: ふつう'}
               </span>
             )}
           </div>
@@ -379,7 +419,7 @@ const Index = () => {
             <div className="level-badge">Lv.{characterLevel}</div>
           </div>
 
-          <div className="mb-4">
+          <div className="mb-2">
             {!isEditingName ? (
               <div className="flex items-center justify-center gap-2">
                 <h2 className="text-3xl font-bold text-navy-dark">
@@ -406,6 +446,12 @@ const Index = () => {
                 </Button>
               </div>
             )}
+            <p className="text-center text-sm font-bold text-lavender-soft mt-1">
+              {STAGE_EMOJI[growthStage] ?? '🥚'} {growthStageLabel}
+              {homeAction === 'celebrating' && (
+                <span className="ml-2 text-amber-600 animate-pulse">うれしい！</span>
+              )}
+            </p>
           </div>
 
           <div className="mb-6">
@@ -431,10 +477,18 @@ const Index = () => {
             </p>
           </div>
 
+          <div className="mb-5 rounded-2xl bg-white/80 border border-lavender-soft/40 p-4">
+            <GrowthStageRoadmap
+              currentStage={growthStage}
+              nextEvolution={growthStatus?.next_evolution}
+              compact
+            />
+          </div>
+
           {(heroPreviewUrl || nextPreviewUrl) && (
             <div className="mb-5 rounded-2xl bg-gradient-to-r from-amber-50 to-lavender-soft/30 p-4 border border-amber-200/60">
               <p className="text-sm font-bold text-navy-dark mb-3">
-                🎮 進化ロードマップ — ここまで育てよう！
+                🎮 進化プレビュー
               </p>
               <div className="flex justify-center items-end gap-3 flex-wrap">
                 <div className="text-center">
@@ -486,49 +540,27 @@ const Index = () => {
             </div>
           )}
 
-          {growthStatus && !growthStatus.next_evolution?.complete && (
-            <div className="mb-4 rounded-2xl bg-sky-soft/30 p-4 text-left text-sm text-navy-dark">
-              <p className="font-bold mb-2">進化ゲージ</p>
-              <p className="font-bold mb-2">
-                次の進化:{' '}
-                {String(growthStatus.next_evolution?.next_stage ?? '—')}
+          {growthStatus && (
+            <EvolutionProgressCard
+              nextEvolution={growthStatus.next_evolution}
+              className="mb-4"
+            />
+          )}
+
+          {growthStatus && (
+            <div className="mb-4 rounded-2xl bg-gradient-to-r from-mint-soft/40 to-lavender-soft/40 p-3 text-sm text-navy-dark">
+              <p className="font-bold mb-1">きょうの成長メモ</p>
+              <p>
+                クイズ {growthStatus.quiz_today ? '挑戦済み ✓' : 'まだ'}
+                {' · '}
+                正解累計 {growthStatus.quiz_correct_count} 問
+                {growthStatus.quiz_streak_days > 0
+                  ? ` · 連続 ${growthStatus.quiz_streak_days} 日`
+                  : ''}
+                {growthStatus.login_streak_days > 0
+                  ? ` · ログイン連続 ${growthStatus.login_streak_days} 日`
+                  : ''}
               </p>
-              <ul className="space-y-1 list-disc list-inside">
-                {(typeof growthStatus.next_evolution?.remaining_exp ===
-                  'number' ||
-                  typeof growthStatus.next_evolution
-                    ?.remaining_character_exp === 'number') && (
-                  <li>
-                    EXP あと{' '}
-                    {Number(
-                      growthStatus.next_evolution.remaining_exp ??
-                        growthStatus.next_evolution.remaining_character_exp,
-                    )}{' '}
-                    （必要{' '}
-                    {growthStatus.next_evolution.required_exp ??
-                      growthStatus.next_evolution.required_character_exp}
-                    ）
-                  </li>
-                )}
-                {typeof growthStatus.next_evolution
-                  ?.remaining_quiz_correct_count === 'number' && (
-                  <li>
-                    クイズ正解 あと{' '}
-                    {growthStatus.next_evolution.remaining_quiz_correct_count}
-                    問
-                  </li>
-                )}
-                {typeof growthStatus.next_evolution?.remaining_total_steps ===
-                  'number' && (
-                  <li>
-                    累計歩数 あと{' '}
-                    {Number(
-                      growthStatus.next_evolution.remaining_total_steps,
-                    ).toLocaleString()}
-                    歩
-                  </li>
-                )}
-              </ul>
             </div>
           )}
 
@@ -538,6 +570,11 @@ const Index = () => {
                 <p className="font-bold">きょうのクイズ</p>
                 <p>{growthStatus.quiz_today ? '挑戦済み ✓' : 'まだだよ'}</p>
                 <p>正解 {growthStatus.quiz_correct_count} 問</p>
+                {growthStatus.quiz_streak_days > 0 && (
+                  <p className="text-orange-700 font-bold mt-1">
+                    連続 {growthStatus.quiz_streak_days} 日
+                  </p>
+                )}
               </div>
               <div className="rounded-xl bg-lavender-soft/30 p-2">
                 <p className="font-bold">きょうの歩数</p>
@@ -561,12 +598,28 @@ const Index = () => {
 
         <Card className="kid-card text-center">
           <div className="text-4xl mb-4">🧮</div>
-          <h3 className="text-2xl font-bold text-navy-dark mb-4">
+          <h3 className="text-2xl font-bold text-navy-dark mb-2">
             今日のクイズ
           </h3>
-          <p className="text-lg text-navy-dark mb-4 font-bold">
+          <p className="text-lg text-navy-dark mb-2 font-bold">
             何回でも挑戦できるよ！{displayName}を成長させよう
           </p>
+          <div className="mb-4 rounded-2xl bg-white/70 border border-lavender-soft/40 p-3 text-sm text-navy-dark">
+            <p className="font-bold">きょうの目標</p>
+            <p>
+              クイズ 1 回チャレンジ{' '}
+              {quizGoalDone ? (
+                <span className="text-green-700 font-bold">達成 ✓</span>
+              ) : (
+                <span className="text-orange-600 font-bold">まだだよ</span>
+              )}
+            </p>
+            {quizStreakDays > 0 && (
+              <p className="mt-1 text-orange-700 font-bold">
+                🔥 クイズ連続 {quizStreakDays} 日目！
+              </p>
+            )}
+          </div>
           {hasQuizToday && todayQuizSnap && (
             <div className="bg-gradient-to-r from-lavender-soft/40 to-mint-soft/40 rounded-2xl p-3 mb-4 text-sm text-navy-dark">
               <p className="font-semibold">きょうの直近クイズ</p>
@@ -579,21 +632,42 @@ const Index = () => {
               </p>
             </div>
           )}
+          {resumeQuizPath && (
+            <Button
+              onClick={() => navigate(resumeQuizPath)}
+              className="quiz-button text-xl py-5 px-8 mb-4 w-full md:w-auto"
+            >
+              ▶️ 続きから（
+              {todayQuizSnap?.subject === 'english' ? '英語' : '算数'} L
+              {todayQuizSnap && todayQuizSnap.scorePercent >= 100
+                ? Math.min(10, todayQuizSnap.level + 1)
+                : todayQuizSnap?.level}
+              ）
+            </Button>
+          )}
           <div className="flex flex-col md:flex-row justify-center gap-4">
             <Button
-              onClick={() => navigate('/quiz?subject=math&level=1')}
+              onClick={() => navigate('/quiz?subject=math')}
               className="quiz-button text-xl py-6 px-10"
             >
-              🧮 算数クイズ
+              🧮 算数を選ぶ
             </Button>
             <Button
-              onClick={() => navigate('/quiz?subject=english&level=1')}
+              onClick={() => navigate('/quiz?subject=english')}
               className="quiz-button text-xl py-6 px-10"
             >
-              ✏️ 英語クイズ
+              ✏️ 英語を選ぶ
             </Button>
           </div>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-2 justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/quiz')}
+              className="rounded-full"
+            >
+              教科・レベル一覧
+            </Button>
             <Button variant="outline" size="sm" asChild className="rounded-full">
               <Link to="/history">学習履歴を一覧で見る</Link>
             </Button>
@@ -605,88 +679,18 @@ const Index = () => {
           </p>
         </Card>
 
-        <Card className="kid-card text-center">
-          <div className="text-4xl mb-4">👟</div>
-          <h3 className="text-2xl font-bold text-navy-dark mb-4">今日の歩数</h3>
-          <p className="text-xs text-gray-500 mb-2">
-            {authHint
-              ? '歩数はサーバー（Heroku / JawsDB）に保存されます（日付はサーバー UTC）。'
-              : '歩数を記録するにはログインしてください。'}
-            <span className="block mt-1 text-navy-dark/80">
-              1000歩ごとに少し XP・目標達成でボーナス XP（きょう1日分）
-            </span>
-          </p>
-          <div className="text-5xl font-bold text-sky-soft mb-4">
-            {todaySteps.toLocaleString()}
-          </div>
-          {!isStepsGoalReached ? (
-            <div>
-              <p className="text-xl font-bold text-lavender-soft mb-4">
-                あと{stepsToGoal.toLocaleString()}歩でごほうび！
-              </p>
-              <Progress
-                value={Math.min(100, (todaySteps / stepsGoal) * 100)}
-                className="h-4 bg-mint-soft/50 mb-4"
-              />
-              <div className="flex flex-wrap justify-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full text-xs"
-                  onClick={() => {
-                    const u = getAuth().currentUser;
-                    if (!u) return;
-                    void (async () => {
-                      const t = await u.getIdToken();
-                      const next = Math.max(0, todaySteps - 300);
-                      try {
-                        const r = await putStepsToday(t, next);
-                        setTodaySteps(r.steps);
-                        setUiTick((x) => x + 1);
-                      } catch {
-                        /* ignore */
-                      }
-                    })();
-                  }}
-                >
-                  −300（デモ）
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full text-xs"
-                  onClick={() => {
-                    const u = getAuth().currentUser;
-                    if (!u) return;
-                    void (async () => {
-                      const t = await u.getIdToken();
-                      const next = todaySteps + 1000;
-                      try {
-                        const r = await putStepsToday(t, next);
-                        setTodaySteps(r.steps);
-                        setUiTick((x) => x + 1);
-                      } catch {
-                        /* ignore */
-                      }
-                    })();
-                  }}
-                >
-                  +1000（デモ）
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-gradient-to-r from-mint-soft to-sky-soft rounded-2xl p-6">
-              <div className="text-6xl mb-2">🏆</div>
-              <p className="text-2xl font-bold text-navy-dark">目標達成！</p>
-              <p className="text-lg text-gray-700">
-                {displayName}が喜んでるよ！
-              </p>
-            </div>
-          )}
-        </Card>
+        <StepsPanel
+          todaySteps={todaySteps}
+          stepsGoal={stepsGoal}
+          loggedIn={Boolean(authHint)}
+          displayName={displayName}
+          todayYmd={stepsYmd}
+          refreshKey={uiTick}
+          onStepsUpdated={(steps) => {
+            setTodaySteps(steps);
+            setUiTick((x) => x + 1);
+          }}
+        />
 
         <Card className="kid-card text-center">
           <h3 className="text-2xl font-bold text-navy-dark mb-6">

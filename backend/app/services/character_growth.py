@@ -70,10 +70,13 @@ def calculate_exp(activity: dict[str, Any]) -> int:
         if activity.get("is_correct"):
             exp += 10
     elif t == "quiz_complete":
-        total = int(activity.get("total_count") or 0)
+        # progress_service.compute_quiz_session_xp_raw と同一式（一本化）
+        from ..growth_service import compute_quiz_session_xp_raw
+
+        total = max(1, int(activity.get("total_count") or 0))
         correct = int(activity.get("correct_count") or 0)
-        exp += 5 * total
-        exp += 10 * correct
+        level = int(activity.get("level") or 1)
+        exp = compute_quiz_session_xp_raw(correct, total, level)
     elif t == "login":
         exp += 5
     elif t == "steps":
@@ -138,22 +141,62 @@ def get_next_evolution_requirement(
     req = EVOLUTION_TO[nxt]
     out: dict[str, Any] = {
         "next_stage": nxt,
+        "next_stage_label": STAGE_LABELS_JA.get(nxt, nxt),
         "current_stage": current,
+        "current_stage_label": STAGE_LABELS_JA.get(current, current),
         "complete": False,
+        "requirements": [],
     }
     for key, need in req.items():
         if key == "has_character_image":
-            remaining = 0 if s.get("has_character_image") else 1
+            have_img = bool(s.get("has_character_image"))
+            remaining = 0 if have_img else 1
             out[f"required_{key}"] = True
             out[f"remaining_{key}"] = remaining
+            out[f"current_{key}"] = have_img
+            out[f"progress_{key}"] = 1.0 if have_img else 0.0
+            out["requirements"].append(
+                {
+                    "key": key,
+                    "label": "キャラ画像",
+                    "required": True,
+                    "current": have_img,
+                    "remaining": remaining,
+                    "progress": 1.0 if have_img else 0.0,
+                    "done": have_img,
+                }
+            )
             continue
         have = int(s.get(key) or 0) if key != "character_exp" else int(character_exp)
         need_i = int(need)
+        remaining = max(0, need_i - have)
+        progress = min(1.0, have / need_i) if need_i else 1.0
         out[f"required_{key}"] = need_i
-        out[f"remaining_{key}"] = max(0, need_i - have)
+        out[f"remaining_{key}"] = remaining
+        out[f"current_{key}"] = have
+        out[f"progress_{key}"] = round(progress, 3)
+        label_map = {
+            "character_exp": "経験値",
+            "quiz_correct_count": "クイズ正解",
+            "total_steps": "累計歩数",
+            "quiz_streak_days": "クイズ連続日数",
+        }
+        out["requirements"].append(
+            {
+                "key": key,
+                "label": label_map.get(key, key),
+                "required": need_i,
+                "current": have,
+                "remaining": remaining,
+                "progress": round(progress, 3),
+                "done": remaining == 0,
+            }
+        )
     if "remaining_character_exp" in out:
         out["remaining_exp"] = out["remaining_character_exp"]
         out["required_exp"] = out.get("required_character_exp")
+        out["current_exp"] = out.get("current_character_exp")
+        out["progress_exp"] = out.get("progress_character_exp")
     return out
 
 
