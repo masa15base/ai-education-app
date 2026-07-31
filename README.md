@@ -18,7 +18,8 @@
 ## 主な機能（実装済み）
 
 - **ホーム**: キャラ表示・名前編集・経験値バー、今日のクイズ導線、歩数（**ログイン時は `GET/PUT /api/steps/today` のみ**。端末 `localStorage` には保存しない）
-- **クイズ**: `GET /api/questions` は **JawsDB の `questions` テーブル**を優先（教科・レベル一致で最大 `limit` 件、id 順）。件数不足や DB 未設定時は従来の **動的生成（`quiz_engine`）** にフォールバック。完了時 **`POST /api/quiz/complete`**（Bearer 付き）で採点・**`progress_entries` + `user_characters.experience`（日次 XP 上限付き）** を同一トランザクションで更新。
+- **クイズ**: `GET /api/questions` は **JawsDB の `questions` テーブル**を優先（教科・レベル一致で**ランダム**に最大 `limit` 件）。件数不足や DB 未設定時は従来の **動的生成（`quiz_engine`）** にフォールバック。完了時 **`POST /api/quiz/complete`**（Bearer 付き）で採点・**`progress_entries` + `user_characters.experience`（日次 XP 上限付き）** を更新。
+- **問題バンク運用**: CSV 投入は `backend/scripts/upload_question_bank.py`（`--mode upsert|replace` / `--dry-run`）。統計は `GET /api/questions/bank-stats`。シード CSV は `backend/app/data/questions_level_10_final.csv`（算数・英語 × Lv1–10 × 各5問・4択）。
 - **成長記録**: `/api/stats/summary` のタイムライン（サーバーのみ）
 - **保護者ダッシュボード**: 統計 API、**きょうの歩数**（ログイン時 `GET /api/steps/today`）
 - **学習履歴**: ログイン時 **`GET /api/progress`** のみ（未ログイン時は履歴なし・CTA 表示）
@@ -126,7 +127,8 @@ pytest tests/ -q
 |----------|------|------|
 | `GET` | `/api/health` | OK。`?include_diagnostic=true` で DB 疎通など |
 | `GET` | `/api/diagnostic` | 診断別名 |
-| `GET` | `/api/questions` | クイズ問題（**DB `questions` 優先**、不足時は動的生成） |
+| `GET` | `/api/questions` | クイズ問題（**DB `questions` 優先・ランダム**、不足時は動的生成） |
+| `GET` | `/api/questions/bank-stats` | 問題バンク件数・レベル不足（gaps） |
 | `POST` / `GET` | `/api/progress` | 学習履歴（要 Bearer） |
 | `GET` / `PUT` | `/api/character` | キャラ（要 Bearer） |
 | `POST` | `/api/quiz/complete` | クイズ完了 |
@@ -153,6 +155,31 @@ pytest tests/ -q
 
 - API キー・DB URL はリポジトリに含めない。
 - 本番では **Firebase Admin で ID トークン検証**（`FIREBASE_CREDENTIALS_JSON`）。開発のみ未設定時は JWT の `sub` を緩く参照する経路あり — 本番では必ず Admin を設定すること。
+
+---
+
+## 問題バンク（CSV → JawsDB）
+
+```bash
+cd backend
+source .venv/bin/activate
+export JAWSDB_URL="$(heroku config:get JAWSDB_URL -a ai-edu-app-backend)"
+
+# 検証のみ
+python scripts/upload_question_bank.py --dry-run
+
+# 追記・更新（推奨）
+python scripts/upload_question_bank.py --mode upsert
+
+# 全消しして入れ直し
+python scripts/upload_question_bank.py --mode replace
+
+# カバレッジ確認
+python scripts/upload_question_bank.py --stats-only
+# または GET /api/questions/bank-stats
+```
+
+シード再生成: `python app/scripts/generate_questions_csv.py`
 
 ---
 

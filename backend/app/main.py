@@ -27,6 +27,7 @@ from .routes import (
     chat,
     generate_character,
     image_preprocess,
+    question_bank_routes,
     quiz,
     stats,
     steps as steps_routes,
@@ -113,6 +114,7 @@ app.include_router(image_preprocess.router, prefix="/api", tags=["image"])
 app.include_router(generate_character.router, prefix="/api", tags=["character"])
 app.include_router(stats.router, prefix="/api/stats", tags=["stats"])
 app.include_router(steps_routes.router, prefix="/api/steps", tags=["steps"])
+app.include_router(question_bank_routes.router, prefix="/api", tags=["questions"])
 
 _static_root = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.isdir(_static_root):

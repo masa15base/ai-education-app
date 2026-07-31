@@ -34,6 +34,7 @@ import {
   EvolutionProgressCard,
   GrowthStageRoadmap,
 } from '@/components/GrowthProgress';
+import { resolveNeedsOnboarding } from '@/lib/onboarding';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -106,6 +107,23 @@ const Index = () => {
       }
     })();
   }, []);
+
+  /** 初回ユーザーはオンボーディングへ */
+  useEffect(() => {
+    if (!pullSettled) return;
+    const user = getAuth().currentUser;
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      const needs = await resolveNeedsOnboarding(user.uid);
+      if (!cancelled && needs) {
+        navigate('/onboarding', { replace: true });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pullSettled, navigate, authHint]);
 
   useEffect(() => {
     const st = location.state as { characterUpdated?: boolean; displayName?: string } | null;
