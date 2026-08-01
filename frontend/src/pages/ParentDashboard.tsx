@@ -170,7 +170,12 @@ const ParentDashboard = () => {
   const stepsGoalDaysWeek = useMemo(() => countGoalDays(stepsWeek), [stepsWeek]);
 
   const learningInsight = useMemo(
-    () => buildLearningInsight(summary),
+    () =>
+      buildLearningInsight({
+        ...summary,
+        weekly_activity: summary.weekly_activity ?? [],
+        subject_breakdown: summary.subject_breakdown ?? [],
+      }),
     [summary],
   );
 
@@ -347,7 +352,7 @@ const ParentDashboard = () => {
             </h3>
             <p className="text-xs text-gray-500 mb-4">日付はサーバー UTC 基準</p>
             <WeeklyActivityChart
-              data={summary.weekly_activity}
+              data={summary.weekly_activity ?? []}
               loading={loading}
             />
           </Card>
@@ -379,7 +384,7 @@ const ParentDashboard = () => {
               教科別（今週）
             </h3>
             <SubjectBreakdownPanel
-              rows={summary.subject_breakdown}
+              rows={summary.subject_breakdown ?? []}
               loading={loading}
             />
           </Card>

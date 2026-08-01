@@ -79,6 +79,18 @@ test('parent dashboard renders stats summary values', async ({ page }) => {
             kind: 'quiz_session',
           },
         ],
+        weekly_activity: [
+          { date: '2026-05-11', quiz_sessions: 1, average_score: 90 },
+        ],
+        subject_breakdown: [
+          {
+            subject: 'math',
+            sessions_week: 4,
+            average_score_week: 83.3,
+            answers_count_week: 12,
+            answer_accuracy_week: 75,
+          },
+        ],
         steps_goal: 5000,
         steps_today: 3200,
         steps_ymd: '2026-05-11',
@@ -86,11 +98,24 @@ test('parent dashboard renders stats summary values', async ({ page }) => {
       }),
     });
   });
+  await page.route('**/api/steps/week**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        authenticated: false,
+        today_ymd: '2026-05-11',
+        goal_steps: 5000,
+        source: 'none',
+        days: [],
+      }),
+    });
+  });
 
   await page.goto('/parent-dashboard');
   await expect(page.getByRole('heading', { name: '保護者ダッシュボード' })).toBeVisible();
   await expect(page.getByText('累計 21 セッション')).toBeVisible();
-  await expect(page.getByText('ログインすると表示')).toBeVisible();
+  await expect(page.getByText('ログインすると表示', { exact: true })).toBeVisible();
   await expect(page.getByText('保護者ダッシュボードはログイン後がおすすめ')).toBeVisible();
   await expect(page.getByText('算数 クイズ')).toBeVisible();
 });
