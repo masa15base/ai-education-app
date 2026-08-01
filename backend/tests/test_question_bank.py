@@ -39,6 +39,15 @@ def test_four_string_options_includes_correct():
     opts = four_string_options("いぬ", ["ねこ", "とり"], seed="x")
     assert len(opts) == 4
     assert "いぬ" in opts
+    assert all("選択肢" not in o for o in opts)
+
+
+def test_four_string_options_replaces_placeholder_and_numeric_pad():
+    opts = four_string_options("8", ["9", "7", "（選択肢4）"], seed="math-4-001")
+    assert len(opts) == 4
+    assert "8" in opts
+    assert all("選択肢" not in o for o in opts)
+    assert all(o.lstrip("-").isdigit() for o in opts)
 
 
 def test_seed_csv_loads_and_covers_levels():
@@ -48,6 +57,7 @@ def test_seed_csv_loads_and_covers_levels():
     for r in rows:
         assert len(r["options"]) == 4
         assert r["correct_answer"] in r["options"]
+        assert all("選択肢" not in o for o in r["options"]), r
     math_l1 = [r for r in rows if r["subject"] == "math" and r["level"] == 1]
     eng_l1 = [r for r in rows if r["subject"] == "english" and r["level"] == 1]
     assert len(math_l1) >= RECOMMENDED_MIN_PER_LEVEL

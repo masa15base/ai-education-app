@@ -85,23 +85,37 @@ for level in range(1, 11):
             }
         )
 
+def _math_distractors(answer: int) -> list[str]:
+    """正解と重複しない誤答を3つ作る。"""
+    seen = {str(answer)}
+    out: list[str] = []
+    for delta in (1, -1, 2, -2, 3, -3, 5, 10, 4, -5):
+        s = str(answer + delta)
+        if s in seen:
+            continue
+        seen.add(s)
+        out.append(s)
+        if len(out) >= 3:
+            break
+    return out
+
+
 for level in range(1, 11):
     for idx in range(5):
         a = level * 2 + idx
         b = idx + 1
         if level <= 3:
             question_text = f"{a} + {b} は？"
-            answer = str(a + b)
-            distractors = [str(a + b + 1), str(a + b - 1), str(a + b + 2)]
+            answer_n = a + b
         elif level <= 6:
             question_text = f"{a} × {b} は？"
-            answer = str(a * b)
-            distractors = [str(a * b + 1), str(a * b - 1), str(a * b + b)]
+            answer_n = a * b
         else:
             a = (a + 2) * b
             question_text = f"{a} ÷ {b} は？"
-            answer = str(a // b)
-            distractors = [str(int(answer) + 1), str(int(answer) - 1), str(int(answer) + 2)]
+            answer_n = a // b
+        answer = str(answer_n)
+        distractors = _math_distractors(answer_n)
         qid = f"math-{level}-{idx + 1:03d}"
         options = four_string_options(answer, distractors, seed=qid)
         rows.append(
