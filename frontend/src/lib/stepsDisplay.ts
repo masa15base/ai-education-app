@@ -1,5 +1,15 @@
 const MILESTONE_KEY = 'manatomo.steps.milestones.v1';
 
+/** 日本時間（Asia/Tokyo）の YYYY-MM-DD */
+export function jstYmd(date: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
 export function stepsProgressPct(steps: number, goal: number): number {
   if (goal <= 0) return 0;
   return Math.min(100, Math.round((steps / goal) * 100));

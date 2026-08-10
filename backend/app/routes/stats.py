@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..db import get_db_optional
 from ..deps import get_optional_uid
+from ..growth_service import app_day_bounds, app_day_keys, app_ymd, to_app_ymd
 from ..progress_service import list_progress
 from ..schemas import (
     StatsCharacterBrief,
@@ -48,24 +49,16 @@ def _to_utc_iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat()
 
 
-def _day_keys_utc(days: int = 7) -> list[str]:
-    now = datetime.now(timezone.utc)
-    return [
-        (now - timedelta(days=offset)).strftime("%Y-%m-%d")
-        for offset in range(days - 1, -1, -1)
-    ]
-
-
 def _build_weekly_activity(
     sessions: list[tuple[datetime, float]],
     days: int = 7,
 ) -> list[StatsDailyActivity]:
-    keys = _day_keys_utc(days)
+    keys = app_day_keys(days)
     buckets: dict[str, list[float]] = {k: [] for k in keys}
     for dt, score in sessions:
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        key = dt.astimezone(timezone.utc).strftime("%Y-%m-%d")
+        key = to_app_ymd(dt)
         if key in buckets:
             buckets[key].append(score)
     return [
@@ -130,7 +123,8 @@ def _stats_from_memory(uid: str, timeline_limit: int) -> StatsSummary:
 
     parsed.sort(key=lambda x: x[0], reverse=True)
 
-    week_boundary = datetime.now(timezone.utc) - timedelta(days=7)
+    week_start, _, _ = app_day_bounds()
+    week_boundary = week_start - timedelta(days=6)
     in_week = [(d, row) for d, row in parsed if d >= week_boundary]
     quiz_sessions_week = len(in_week)
     average_score_week = (
@@ -161,7 +155,7 @@ def _stats_from_memory(uid: str, timeline_limit: int) -> StatsSummary:
             )
         )
 
-    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    day = app_ymd()
     st, st_src = get_steps_today(uid, day)
     return StatsSummary(
         database_configured=False,
@@ -199,14 +193,17 @@ def stats_summary(
     if db is None:
         return _stats_from_memory(uid, timeline_limit)
 
-    week_ago = datetime.utcnow() - timedelta(days=7)
+    week_start, _, _ = app_day_bounds()
+    week_ago = week_start - timedelta(days=6)
+    # MySQL の naive datetime と比較するため UTC naive に揃える
+    week_ago_naive = week_ago.astimezone(timezone.utc).replace(tzinfo=None)
 
     prog_all = (
         db.query(models.ProgressEntry)
         .filter(models.ProgressEntry.user_id == uid)
         .all()
     )
-    sessions_week = [p for p in prog_all if p.created_at and p.created_at >= week_ago]
+    sessions_week = [p for p in prog_all if p.created_at and p.created_at >= week_ago_naive]
     quiz_sessions_week = len(sessions_week)
     average_score_week = (
         round(sum(p.score for p in sessions_week) / len(sessions_week), 1)
@@ -241,20 +238,20 @@ def stats_summary(
         .filter(models.QuizAnswerLog.user_id == uid)
         .all()
     )
-    logs_week = [l for l in logs_all if l.created_at and l.created_at >= week_ago]
+    logs_week = [l for l in logs_all if l.created_at and l.created_at >= week_ago_naive]
     answers_count_week = len(logs_week)
     correct_week = sum(1 for l in logs_week if l.correct)
     answer_accuracy_week = (
         round((correct_week / len(logs_week)) * 100, 1) if logs_week else None
     )
 
-    def _as_utc(dt: datetime) -> datetime:
+    def _as_aware_utc(dt: datetime) -> datetime:
         if dt.tzinfo is None:
             return dt.replace(tzinfo=timezone.utc)
         return dt.astimezone(timezone.utc)
 
     week_sessions_db = [
-        (_as_utc(p.created_at), float(p.score))
+        (_as_aware_utc(p.created_at), float(p.score))
         for p in sessions_week
         if p.created_at
     ]
@@ -275,7 +272,7 @@ def stats_summary(
             image_url=char_row.image_url,
         )
 
-    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    day = app_ymd()
     st, st_src = get_steps_today(uid, day)
     return StatsSummary(
         database_configured=True,

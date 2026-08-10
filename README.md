@@ -56,7 +56,7 @@ mysql "$JAWSDB_URL" < backend/scripts/heroku_add_growth_columns.sql
 
 | メソッド | パス | 認証 | 説明 |
 |----------|------|------|------|
-| `GET` | `/api/steps/today` | **任意**（Bearer なし可） | 未ログイン: `authenticated: false`, `steps: null`。ログイン済: 当日（**サーバー UTC の YYYY-MM-DD**）の歩数。DB 無し時はメモリ。 |
+| `GET` | `/api/steps/today` | **任意**（Bearer なし可） | 未ログイン: `authenticated: false`, `steps: null`。ログイン済: 当日（**日本時間 JST の YYYY-MM-DD**）の歩数。DB 無し時はメモリ。 |
 | `PUT` | `/api/steps/today` | **必須** | JSON `{ "steps": number }` で当日を上書き（手入力・ホームのデモ同期用）。 |
 | `GET` | `/api/steps/week` | **任意** | 直近 7 日分の歩数・目標達成日など（ホーム / 保護者ダッシュボード用）。 |
 

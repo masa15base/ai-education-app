@@ -12,7 +12,7 @@ from . import models
 from .db import SessionLocal
 
 logger = logging.getLogger(__name__)
-from .growth_service import utc_day_bounds
+from .growth_service import app_ymd, utc_day_bounds
 from .services.character_growth import (
     build_character_status,
     calculate_exp,
@@ -289,7 +289,7 @@ def get_character_exp(uid: str) -> int:
 
 def apply_activity_memory(uid: str, activity: dict[str, Any]) -> dict[str, Any]:
     stats = {**default_stats(), **_memory.get(uid, {})}
-    ymd = _utc_now().strftime("%Y-%m-%d")
+    ymd = app_ymd()
     prev_stage = determine_character_stage(stats, int(stats.get("character_exp") or 0))
     t = (activity.get("activity_type") or "").strip()
     if activity.get("skip_exp"):

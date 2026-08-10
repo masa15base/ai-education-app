@@ -40,7 +40,9 @@ def _utc_now() -> datetime:
 
 
 def _utc_ymd() -> str:
-    return _utc_now().strftime("%Y-%m-%d")
+    from ..growth_service import app_ymd
+
+    return app_ymd()
 
 
 def default_stats() -> dict[str, Any]:

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from fastapi import APIRouter, Depends
 
 from ..deps import get_current_uid, get_optional_uid
+from ..growth_service import app_day_keys, app_ymd
 from ..schemas import StepsPutIn, StepsPutOut, StepsTodayOut, StepsWeekDayOut, StepsWeekOut
 from ..growth_stats_store import record_activity
 from ..steps_service import get_steps_today, list_steps_week, set_steps_today
@@ -16,13 +15,9 @@ DEFAULT_STEPS_GOAL = 5000
 router = APIRouter(tags=["steps"])
 
 
-def _ymd_utc() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-
 @router.get("/today", response_model=StepsTodayOut)
 def steps_today(uid: str | None = Depends(get_optional_uid)):
-    day = _ymd_utc()
+    day = app_ymd()
     if not uid:
         return StepsTodayOut(
             authenticated=False,
@@ -43,7 +38,7 @@ def steps_today(uid: str | None = Depends(get_optional_uid)):
 
 @router.put("/today", response_model=StepsPutOut)
 def steps_today_put(body: StepsPutIn, uid: str = Depends(get_current_uid)):
-    day = _ymd_utc()
+    day = app_ymd()
     prev, _ = get_steps_today(uid, day)
     n, src = set_steps_today(uid, body.steps, day)
     delta = max(0, int(n) - int(prev or 0))
@@ -61,13 +56,11 @@ def steps_today_put(body: StepsPutIn, uid: str = Depends(get_current_uid)):
 
 @router.get("/week", response_model=StepsWeekOut)
 def steps_week(uid: str | None = Depends(get_optional_uid)):
-    day = _ymd_utc()
+    day = app_ymd()
     if not uid:
-        from ..steps_service import _day_keys_utc
-
         empty_days = [
             StepsWeekDayOut(date=d, steps=0, goal_reached=False)
-            for d in _day_keys_utc(7)
+            for d in app_day_keys(7)
         ]
         return StepsWeekOut(
             authenticated=False,

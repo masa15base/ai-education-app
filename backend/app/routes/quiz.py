@@ -85,7 +85,7 @@ def verify_one(body: QuizVerifyBody):
 
 @router.get("/session-today")
 def quiz_session_today(uid: str | None = Depends(get_optional_uid)):
-    """ログイン時: UTC 当日にクイズ進捗があれば true と直近1件。"""
+    """ログイン時: JST 当日にクイズ進捗があれば true と直近1件。"""
     if not uid:
         return {"has_session_today": False, "latest": None}
     latest = latest_progress_entry_today_utc(uid)

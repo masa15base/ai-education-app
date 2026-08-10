@@ -22,6 +22,7 @@ import {
 import {
   countGoalDays,
   formatStepsDayLabel,
+  jstYmd,
   popNewMilestones,
   stepsEncouragement,
   stepsProgressPct,
@@ -145,7 +146,7 @@ export function StepsPanel({
   }, [refreshKey, loggedIn]);
 
   useEffect(() => {
-    const ymd = todayYmd ?? new Date().toISOString().slice(0, 10);
+    const ymd = todayYmd ?? jstYmd();
     const prev = prevStepsRef.current;
     if (todaySteps !== prev) {
       const milestones = popNewMilestones(prev, todaySteps, stepsGoal, ymd);
@@ -312,7 +313,7 @@ export function StepsPanel({
         </div>
         <StepsWeekChart days={weekDays} loading={weekLoading} />
         <p className="text-[10px] text-gray-400 mt-2 text-center">
-          緑 = 目標達成 · 日付はサーバー UTC
+          緑 = 目標達成 · 日付は日本時間（JST）
         </p>
       </div>
     </Card>

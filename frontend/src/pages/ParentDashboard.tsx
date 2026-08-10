@@ -256,7 +256,7 @@ const ParentDashboard = () => {
                     </p>
                     <p className="text-xs text-purple-700 mt-1">
                       目標 {summary.steps_goal.toLocaleString()} 歩（サーバー日付{' '}
-                      {summary.steps_ymd ?? '—'} · UTC · {summary.steps_source ?? '—'}）
+                      {summary.steps_ymd ?? '—'} · JST · {summary.steps_source ?? '—'}）
                     </p>
                     <Progress
                       value={Math.min(
@@ -350,7 +350,7 @@ const ParentDashboard = () => {
               <TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
               週間クイズ（直近7日）
             </h3>
-            <p className="text-xs text-gray-500 mb-4">日付はサーバー UTC 基準</p>
+            <p className="text-xs text-gray-500 mb-4">日付は日本時間（JST）基準</p>
             <WeeklyActivityChart
               data={summary.weekly_activity ?? []}
               loading={loading}

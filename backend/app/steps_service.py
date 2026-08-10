@@ -1,23 +1,23 @@
-"""今日の歩数（手入力・デモ用）。DB 無し時はプロセス内メモリ。"""
+"""今日の歩数（手入力・デモ用）。DB 無し時はプロセス内メモリ。日付キーは JST。"""
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-
 from . import db as dbmod
+from .growth_service import app_day_keys, app_ymd
 from .models import DailyStep
 
 
-def _ymd_utc() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+def _ymd_today() -> str:
+    return app_ymd()
 
 
-def _day_keys_utc(days: int = 7) -> list[str]:
-    now = datetime.now(timezone.utc)
-    return [
-        (now - timedelta(days=offset)).strftime("%Y-%m-%d")
-        for offset in range(days - 1, -1, -1)
-    ]
+def _day_keys(days: int = 7) -> list[str]:
+    return app_day_keys(days)
+
+
+# 互換（routes から参照される旧名）
+_ymd_utc = _ymd_today
+_day_keys_utc = _day_keys
 
 
 _memory: dict[str, int] = {}
@@ -29,7 +29,7 @@ def _key(uid: str, ymd: str) -> str:
 
 def get_steps_today(uid: str, ymd: str | None = None) -> tuple[int, str]:
     """戻り値: (steps, source) source は database | memory"""
-    day = ymd or _ymd_utc()
+    day = ymd or _ymd_today()
     if dbmod.SessionLocal is None:
         return _memory.get(_key(uid, day), 0), "memory"
 
@@ -48,7 +48,7 @@ def get_steps_today(uid: str, ymd: str | None = None) -> tuple[int, str]:
 
 
 def set_steps_today(uid: str, steps: int, ymd: str | None = None) -> tuple[int, str]:
-    day = ymd or _ymd_utc()
+    day = ymd or _ymd_today()
     steps = max(0, min(999_999, int(steps)))
 
     if dbmod.SessionLocal is None:
@@ -81,7 +81,7 @@ def list_steps_week(
     goal_steps: int = 5000,
 ) -> tuple[list[dict[str, object]], str]:
     """直近 days 日分の歩数。戻り値: ([{date, steps, goal_reached}, ...], source)"""
-    keys = _day_keys_utc(days)
+    keys = _day_keys(days)
     goal_steps = max(1000, int(goal_steps))
 
     if dbmod.SessionLocal is None:
