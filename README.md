@@ -120,6 +120,42 @@ npm run dev
 
 ---
 
+## フロント本番デプロイ（Vercel）
+
+このリポジトリのフロントは **Vite + React（`frontend/`）** です。  
+Vercel で **Next.js の初期テンプレート**（`Get started by editing app/page.tsx`）が表示される場合、**別プロジェクト／別リポジトリ**がデプロイされています。
+
+### Vercel プロジェクト設定
+
+| 項目 | 値 |
+|------|-----|
+| **Git リポジトリ** | `masa15base/ai-education-app`（本モノレポ） |
+| **Root Directory** | `frontend` |
+| **Framework Preset** | Vite |
+| **Build Command** | `npm run build` |
+| **Output Directory** | `dist` |
+| **Install Command** | `npm ci`（または `npm install`） |
+
+`frontend/vercel.json` に SPA 用 rewrite（React Router）を含めています。
+
+### 環境変数（Vercel → Settings → Environment Variables）
+
+| 変数 | 値（例） |
+|------|----------|
+| `VITE_API_URL` | `https://ai-edu-app-backend-fb6ffb49064a.herokuapp.com/api` |
+
+テンプレ: `frontend/vercel.env.example`
+
+### デプロイ後の確認
+
+1. トップが **まなとも** のホーム画面になる（Next.js ロゴではない）
+2. `/connection-test` で Heroku API が OK
+3. ログイン → クイズ → 履歴が保存される
+
+Heroku 側では `FRONTEND_ORIGINS` に Vercel の URL を含めてください（例: `https://ai-edu-app-frontend.vercel.app`）。
+
+---
+
 ## テスト
 
 ### 一括（推奨）
