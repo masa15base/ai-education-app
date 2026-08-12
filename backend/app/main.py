@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from pydantic import BaseModel, Field
 
-from .deps import get_current_uid, init_firebase
+from .deps import get_current_uid, init_firebase, is_firebase_configured
 from .security_settings import is_production_hardened
 from .progress_service import append_progress, list_progress
 from .question_service import questions_for_quiz
@@ -39,7 +39,17 @@ def _cors_origins() -> list[str]:
         "FRONTEND_ORIGINS",
         "http://localhost:5173,http://127.0.0.1:5173",
     )
-    return [o.strip() for o in raw.split(",") if o.strip()]
+    origins: list[str] = []
+    seen: set[str] = set()
+    for o in raw.split(","):
+        origin = o.strip().rstrip("/")
+        if origin and origin not in seen:
+            seen.add(origin)
+            origins.append(origin)
+    front_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+    if front_url and front_url not in seen:
+        origins.append(front_url)
+    return origins
 
 
 def _cors_regex() -> str | None:
@@ -163,8 +173,9 @@ def _health_diagnostic_payload() -> dict[str, Any]:
         "replicate_configured": bool(os.getenv("REPLICATE_API_TOKEN")),
         "openai_configured": bool(os.getenv("OPENAI_API_KEY")),
         "character_vision_enabled": _character_vision_enabled(),
-        "firebase_admin_configured": bool(os.getenv("FIREBASE_CREDENTIALS_JSON")),
+        "firebase_admin_configured": is_firebase_configured(),
         "cors_origins_count": len(_cors_origins()),
+        "cors_origins": _cors_origins(),
     }
 
 
