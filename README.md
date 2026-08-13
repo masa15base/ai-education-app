@@ -120,7 +120,56 @@ npm run dev
 
 ---
 
-## フロント本番デプロイ（Vercel）
+## フロント本番デプロイ（Firebase Hosting・推奨）
+
+Firebase Authentication と同じプロジェクト（`ai-education-app-9d7ae`）で Hosting を使います。
+
+### 初回セットアップ
+
+1. [Firebase CLI](https://firebase.google.com/docs/cli) をインストール
+2. プロジェクトで Hosting を有効化（未設定の場合）:
+   ```bash
+   npx firebase-tools login
+   npx firebase-tools init hosting --project ai-education-app-9d7ae
+   ```
+   既に `firebase.json` / `.firebaserc` がある場合は init は不要です。
+
+### デプロイ
+
+```bash
+bash scripts/deploy_firebase_hosting.sh
+```
+
+環境変数で API 先を上書き可能:
+
+```bash
+VITE_API_URL=https://ai-edu-app-backend-fb6ffb49064a.herokuapp.com/api \
+  bash scripts/deploy_firebase_hosting.sh
+```
+
+デプロイ先 URL（例）:
+
+- https://ai-education-app-9d7ae.web.app
+- https://ai-education-app-9d7ae.firebaseapp.com
+
+### Heroku CORS（デプロイ後必須）
+
+Hosting URL を Heroku の許可オリジンに追加:
+
+```bash
+heroku config:set FRONTEND_ORIGINS="https://ai-education-app-9d7ae.web.app,https://ai-education-app-9d7ae.firebaseapp.com,http://localhost:5173,http://127.0.0.1:5173" \
+  -a ai-edu-app-backend
+```
+
+### 確認
+
+1. トップが **まなとも** のホーム画面になる
+2. `/connection-test` で Heroku API が OK
+3. ログイン → クイズ → 履歴が保存される
+
+---
+
+## フロント本番デプロイ（Vercel・代替）
 
 このリポジトリのフロントは **Vite + React（`frontend/`）** です。  
 Vercel で **Next.js の初期テンプレート**（`Get started by editing app/page.tsx`）が表示される場合、**別プロジェクト／別リポジトリ**がデプロイされています。
