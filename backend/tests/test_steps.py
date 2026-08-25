@@ -41,5 +41,24 @@ def test_steps_put_get_memory():
         assert r2.status_code == 200
         assert r2.json()["steps"] == 3200
         assert r2.json()["authenticated"] is True
+
+        rw = client.get("/api/steps/week", headers={"Authorization": "Bearer dummy"})
+        assert rw.status_code == 200, rw.text
+        week = rw.json()
+        assert week["authenticated"] is True
+        assert len(week["days"]) == 7
+        assert week["goal_steps"] == 5000
+        today_row = next(d for d in week["days"] if d["date"] == week["today_ymd"])
+        assert today_row["steps"] == 3200
+        assert today_row["goal_reached"] is False
     finally:
         app.dependency_overrides.clear()
+
+
+def test_steps_week_guest():
+    r = client.get("/api/steps/week")
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["authenticated"] is False
+    assert len(d["days"]) == 7
+    assert all(row["steps"] == 0 for row in d["days"])

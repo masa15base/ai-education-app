@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { saveProgress } from "@/lib/api";
 import { fetchCharacterFromServer } from "@/lib/characterState";
+import { resolvePostLoginPath } from "@/lib/onboarding";
 
 const loginInputClass =
   "mb-3 border-2 border-black bg-white text-black placeholder:text-gray-600 focus-visible:ring-black focus-visible:border-black";
@@ -103,13 +104,17 @@ function Login() {
 
   const afterAuthSuccess = async () => {
     const pulled = await fetchCharacterFromServer();
+    const dest = await resolvePostLoginPath();
     toast({
       title: "ログインしました",
-      description: pulled
-        ? "クラウドのキャラ情報を読み込みました"
-        : "ホームであそんでね（クラウドにキャラがない場合は、あとから作れます）",
+      description:
+        dest === "/onboarding"
+          ? "はじめてガイドへ進むよ"
+          : pulled
+            ? "クラウドのキャラ情報を読み込みました"
+            : "ホームであそんでね",
     });
-    navigate("/");
+    navigate(dest, { replace: true });
   };
 
   const ensureEmailVerifiedForLogin = async (user: User): Promise<boolean> => {
@@ -334,6 +339,8 @@ function Login() {
           <h1 className="text-2xl font-bold text-black">まなともログイン</h1>
           <p className="text-xs text-gray-600 mt-2">
             ログインするとキャラ・経験値をクラウドへ保存できます。
+            <br />
+            はじめての人は、なまえ設定とクイズ案内（オンボーディング）に進みます。
             <br />
             メール新規登録では確認メールのリンクを開いてからログインしてください。
           </p>

@@ -59,7 +59,7 @@ class UserCharacter(Base):
     image_url = Column(Text, nullable=True)
     experience = Column(Integer, nullable=False, default=0)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    # 歩数由来 XP の冪等付与（サーバー UTC 日付で daily_steps と揃える）
+    # 歩数由来 XP の冪等付与（JST 日付で daily_steps と揃える）
     steps_growth_ymd = Column(String(10), nullable=True)
     steps_xp_paid_tier = Column(Integer, nullable=False, default=0)
     steps_xp_goal_bonus = Column(Boolean, nullable=False, default=False)

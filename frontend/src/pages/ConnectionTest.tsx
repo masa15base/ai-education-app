@@ -93,6 +93,7 @@ const ConnectionTest = () => {
         'PUT /api/steps/today（ログイン時・GET の値を再送して往復確認）',
       state: 'idle',
     },
+    { label: 'GET /api/questions/bank-stats（問題バンク）', state: 'idle' },
   ]);
 
   const updateRow = (index: number, patch: Partial<CheckRow>) => {
@@ -199,6 +200,7 @@ const ConnectionTest = () => {
         [6, `${base}/chat/capabilities`],
         [7, `${base}/stats/summary?timeline_limit=1`],
         [8, `${base}/preprocess-image/info`],
+        [10, `${base}/questions/bank-stats`],
       ];
       for (const [idx, url] of extraChecks) {
         updateRow(idx, { state: 'loading' });

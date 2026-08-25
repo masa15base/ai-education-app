@@ -20,6 +20,51 @@ except ImportError:  # pragma: no cover
 _firebase_ready = False
 
 
+def _normalize_private_key(key: str) -> str:
+    """Heroku 等で \\n エスケープされた PEM を復元する。"""
+    return key.replace("\\n", "\n").strip()
+
+
+def _firebase_credential_dict() -> dict | None:
+    """
+    Firebase Admin 用サービスアカウント辞書。
+    FIREBASE_CREDENTIALS_JSON を優先し、無ければ Heroku 向け分割 env から組み立てる。
+    """
+    raw = os.getenv("FIREBASE_CREDENTIALS_JSON", "").strip()
+    if raw:
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, dict) else None
+        except json.JSONDecodeError:
+            return None
+
+    project_id = os.getenv("FIREBASE_PROJECT_ID", "").strip()
+    client_email = os.getenv("FIREBASE_CLIENT_EMAIL", "").strip()
+    private_key = os.getenv("FIREBASE_PRIVATE_KEY", "").strip()
+    if not (project_id and client_email and private_key):
+        return None
+
+    email_encoded = client_email.replace("@", "%40")
+    return {
+        "type": "service_account",
+        "project_id": project_id,
+        "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID", "").strip() or "heroku",
+        "private_key": _normalize_private_key(private_key),
+        "client_email": client_email,
+        "client_id": os.getenv("FIREBASE_CLIENT_ID", "").strip() or "",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url": (
+            f"https://www.googleapis.com/robot/v1/metadata/x509/{email_encoded}"
+        ),
+    }
+
+
+def is_firebase_configured() -> bool:
+    return _firebase_credential_dict() is not None
+
+
 def init_firebase() -> None:
     global _firebase_ready
     if _firebase_ready:
@@ -27,11 +72,10 @@ def init_firebase() -> None:
     if firebase_admin is None or firebase_admin._apps:
         _firebase_ready = bool(firebase_admin and firebase_admin._apps)
         return
-    raw = os.getenv("FIREBASE_CREDENTIALS_JSON")
-    if not raw:
+    cred_dict = _firebase_credential_dict()
+    if not cred_dict:
         return
     try:
-        cred_dict = json.loads(raw)
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
         _firebase_ready = True

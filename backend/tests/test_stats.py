@@ -34,17 +34,29 @@ def test_stats_summary_memory_follows_progress():
         r1 = client.post("/api/progress", json=payload, headers=h)
         assert r1.status_code == 200, r1.text
 
+        payload2 = {"subject": "english", "level": 1, "score": 70}
+        r1b = client.post("/api/progress", json=payload2, headers=h)
+        assert r1b.status_code == 200, r1b.text
+
         r2 = client.get("/api/stats/summary", headers=h)
         assert r2.status_code == 200, r2.text
         data = r2.json()
-        assert data["quiz_sessions_total"] >= 1
-        assert len(data["timeline"]) >= 1
+        assert data["quiz_sessions_total"] >= 2
+        assert len(data["timeline"]) >= 2
         head = data["timeline"][0]
-        assert head["subject"] == "math"
-        assert head["level"] == 2
-        assert head["score"] == 90
+        assert head["subject"] in ("math", "english")
         assert data.get("steps_today") is not None
         assert data.get("steps_goal") == 5000
         assert data.get("steps_ymd")
+
+        assert len(data["weekly_activity"]) == 7
+        assert sum(d["quiz_sessions"] for d in data["weekly_activity"]) >= 2
+
+        subjects = {row["subject"] for row in data["subject_breakdown"]}
+        assert "math" in subjects
+        assert "english" in subjects
+        math_row = next(r for r in data["subject_breakdown"] if r["subject"] == "math")
+        assert math_row["sessions_week"] >= 1
+        assert math_row["average_score_week"] == 90.0
     finally:
         app.dependency_overrides.clear()

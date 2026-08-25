@@ -19,7 +19,24 @@ import {
   levelFromExperience,
   progressInCurrentLevel,
 } from '@/lib/characterState';
+import {
+  fetchCharacterGrowthStatus,
+  type CharacterGrowthStatus,
+} from '@/lib/characterStatusApi';
+import {
+  EvolutionProgressCard,
+  GrowthStageRoadmap,
+} from '@/components/GrowthProgress';
+import { STAGE_EMOJI, stageLabel } from '@/lib/growthDisplay';
 import { subjectJa } from '@/lib/subjectJa';
+import {
+  SubjectBreakdownPanel,
+  WeeklyActivityChart,
+} from '@/components/ParentDashboardCharts';
+import { StepsWeekChart } from '@/components/StepsPanel';
+import { buildLearningInsight } from '@/lib/parentDashboardInsights';
+import { fetchStepsWeek, type StepsWeekDay } from '@/lib/stepsApi';
+import { countGoalDays } from '@/lib/stepsDisplay';
 
 function emptySummary(): StatsSummary {
   return {
@@ -32,6 +49,8 @@ function emptySummary(): StatsSummary {
     answer_accuracy_week: null,
     character: null,
     timeline: [],
+    weekly_activity: [],
+    subject_breakdown: [],
     steps_goal: 5000,
     steps_today: null,
     steps_ymd: null,
@@ -50,6 +69,11 @@ const ParentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<StatsSummary>(emptySummary());
+  const [growthStatus, setGrowthStatus] = useState<CharacterGrowthStatus | null>(
+    null,
+  );
+  const [stepsWeek, setStepsWeek] = useState<StepsWeekDay[]>([]);
+  const [stepsWeekLoading, setStepsWeekLoading] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(getAuth(), setFirebaseUser);
@@ -83,6 +107,44 @@ const ParentDashboard = () => {
     };
   }, [firebaseUser]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!firebaseUser) {
+        setGrowthStatus(null);
+        return;
+      }
+      const st = await fetchCharacterGrowthStatus();
+      if (!cancelled) setGrowthStatus(st);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [firebaseUser]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!firebaseUser) {
+        setStepsWeek([]);
+        return;
+      }
+      setStepsWeekLoading(true);
+      try {
+        const token = await firebaseUser.getIdToken();
+        const week = await fetchStepsWeek(token);
+        if (!cancelled) setStepsWeek(week.days);
+      } catch {
+        if (!cancelled) setStepsWeek([]);
+      } finally {
+        if (!cancelled) setStepsWeekLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [firebaseUser]);
+
   const charFromApi = summary.character;
   const displayChar = charFromApi
     ? {
@@ -105,19 +167,17 @@ const ParentDashboard = () => {
   );
 
   const recentActivities = useMemo(() => summary.timeline.slice(0, 8), [summary.timeline]);
+  const stepsGoalDaysWeek = useMemo(() => countGoalDays(stepsWeek), [stepsWeek]);
 
-  const learningTips = useMemo(() => {
-    const acc = summary.answer_accuracy_week;
-    if (!summary.database_configured) {
-      return 'データベース未接続のため、詳細ログはサーバー側にありません。（テスト環境でも同様です）';
-    }
-    if (acc == null) {
-      return '今週の解答ログがありません（クイズ完了 API で記録されます）。';
-    }
-    if (acc < 65) return '得意を伸ばす前に基本問題の復習が効果的です。';
-    if (acc < 85) return '良い調子です。ミスパターンを意識して継続しましょう。';
-    return 'とても安定しています。少しずつレベルを上げてチャレンジしてみましょう。';
-  }, [summary.answer_accuracy_week, summary.database_configured]);
+  const learningInsight = useMemo(
+    () =>
+      buildLearningInsight({
+        ...summary,
+        weekly_activity: summary.weekly_activity ?? [],
+        subject_breakdown: summary.subject_breakdown ?? [],
+      }),
+    [summary],
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -196,7 +256,7 @@ const ParentDashboard = () => {
                     </p>
                     <p className="text-xs text-purple-700 mt-1">
                       目標 {summary.steps_goal.toLocaleString()} 歩（サーバー日付{' '}
-                      {summary.steps_ymd ?? '—'} · UTC · {summary.steps_source ?? '—'}）
+                      {summary.steps_ymd ?? '—'} · JST · {summary.steps_source ?? '—'}）
                     </p>
                     <Progress
                       value={Math.min(
@@ -219,11 +279,114 @@ const ParentDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-yellow-600 font-medium">キャラレベル</p>
-                <p className="text-2xl font-bold text-yellow-800">{displayChar.level}</p>
-                <p className="text-xs text-yellow-800 mt-1">XP {displayChar.xp}</p>
+                <p className="text-2xl font-bold text-yellow-800">
+                  {growthStatus?.level ?? displayChar.level}
+                </p>
+                <p className="text-xs text-yellow-800 mt-1">
+                  {growthStatus
+                    ? `${STAGE_EMOJI[growthStatus.stage] ?? ''} ${growthStatus.stage_label}`
+                    : `XP ${displayChar.xp}`}
+                </p>
               </div>
               <Star className="h-8 w-8 text-yellow-500" />
             </div>
+          </Card>
+        </div>
+
+        {growthStatus && (
+          <Card className="p-6 mb-6 border-indigo-100 bg-indigo-50/40">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">
+              キャラ成長サマリ
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              {displayChar.name} · ステージ{' '}
+              <span className="font-bold">
+                {STAGE_EMOJI[growthStatus.stage]} {growthStatus.stage_label}
+              </span>
+              {growthStatus.next_evolution?.next_stage && (
+                <>
+                  {' '}
+                  → 次は{' '}
+                  <span className="font-bold text-indigo-700">
+                    {growthStatus.next_evolution.next_stage_label ||
+                      stageLabel(growthStatus.next_evolution.next_stage)}
+                  </span>
+                </>
+              )}
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-sm">
+              <div className="rounded-lg bg-white p-3 border">
+                <p className="text-gray-500 text-xs">クイズ正解（累計）</p>
+                <p className="font-bold text-lg">{growthStatus.quiz_correct_count}</p>
+              </div>
+              <div className="rounded-lg bg-white p-3 border">
+                <p className="text-gray-500 text-xs">クイズ連続日数</p>
+                <p className="font-bold text-lg">{growthStatus.quiz_streak_days}</p>
+              </div>
+              <div className="rounded-lg bg-white p-3 border">
+                <p className="text-gray-500 text-xs">累計歩数</p>
+                <p className="font-bold text-lg">
+                  {growthStatus.total_steps.toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-lg bg-white p-3 border">
+                <p className="text-gray-500 text-xs">ログイン連続</p>
+                <p className="font-bold text-lg">{growthStatus.login_streak_days}</p>
+              </div>
+            </div>
+            <GrowthStageRoadmap
+              currentStage={growthStatus.stage}
+              nextEvolution={growthStatus.next_evolution}
+              compact
+              className="mb-4 bg-white rounded-xl p-3 border"
+            />
+            <EvolutionProgressCard nextEvolution={growthStatus.next_evolution} />
+          </Card>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-bold mb-1 flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
+              週間クイズ（直近7日）
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">日付は日本時間（JST）基準</p>
+            <WeeklyActivityChart
+              data={summary.weekly_activity ?? []}
+              loading={loading}
+            />
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="text-lg font-bold mb-1 flex items-center">
+              <Activity className="h-5 w-5 mr-2 text-purple-500" />
+              週間歩数（直近7日）
+            </h3>
+            <p className="text-xs text-gray-500 mb-2">
+              {firebaseUser
+                ? `目標達成 ${stepsGoalDaysWeek} / 7 日 · 目標 ${summary.steps_goal.toLocaleString()} 歩`
+                : 'ログインすると表示されます'}
+            </p>
+            {firebaseUser ? (
+              <StepsWeekChart days={stepsWeek} loading={stepsWeekLoading} />
+            ) : (
+              <p className="text-sm text-gray-600 py-6 text-center">
+                子どもアカウントでログインすると週間グラフが表示されます。
+              </p>
+            )}
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <Card className="p-6 lg:col-span-2">
+            <h3 className="text-lg font-bold mb-4 flex items-center">
+              <BookOpen className="h-5 w-5 mr-2 text-indigo-500" />
+              教科別（今週）
+            </h3>
+            <SubjectBreakdownPanel
+              rows={summary.subject_breakdown ?? []}
+              loading={loading}
+            />
           </Card>
         </div>
 
@@ -269,8 +432,22 @@ const ParentDashboard = () => {
               </div>
 
               <div className="bg-blue-50 rounded-lg p-4 mt-4">
-                <h4 className="font-medium text-blue-800 mb-2">自動メモ（ざっくり）</h4>
-                <p className="text-sm text-blue-700">{learningTips}</p>
+                <h4 className="font-medium text-blue-800 mb-2">学習アドバイス</h4>
+                <p className="text-sm text-blue-700">{learningInsight.tip}</p>
+                {learningInsight.focusSubject && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 rounded-full"
+                    onClick={() =>
+                      navigate(
+                        `/quiz?subject=${encodeURIComponent(learningInsight.focusSubject!)}`,
+                      )
+                    }
+                  >
+                    {learningInsight.focusLabel}のクイズへ
+                  </Button>
+                )}
               </div>
             </div>
           </Card>
@@ -290,9 +467,9 @@ const ParentDashboard = () => {
                 {recentActivities.map((row) => (
                   <div
                     key={`${row.created_at}-${row.subject}-${row.level}-${row.score}`}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg gap-3"
                   >
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium text-gray-800">
                         {subjectJa(row.subject)} クイズ
                       </p>
@@ -300,8 +477,20 @@ const ParentDashboard = () => {
                         {new Date(row.created_at).toLocaleDateString('ja-JP')} ・ Lv.{row.level}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
                       <p className="text-sm font-medium text-gray-800">スコア {row.score}%</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-blue-700"
+                        onClick={() =>
+                          navigate(
+                            `/quiz?subject=${encodeURIComponent(row.subject)}&level=${row.level}`,
+                          )
+                        }
+                      >
+                        同じ条件で挑戦
+                      </Button>
                     </div>
                   </div>
                 ))}

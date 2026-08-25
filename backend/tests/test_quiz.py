@@ -78,6 +78,41 @@ def test_quiz_complete_saves_with_auth_override():
             },
         )
         assert r.status_code == 200, r.text
-        assert r.json()["saved"] is True
+        body = r.json()
+        assert body["saved"] is True
+        # メモリモードでも growth 経由で XP > 0（DB 時は progress 日次上限付き）
+        assert body["gained_xp"] > 0
+        assert body["growth"]["exp_gained"] == body["gained_xp"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_quiz_complete_xp_matches_formula():
+    from app.growth_service import compute_quiz_session_xp_raw
+
+    def fake_uid():
+        return "xp-unify-user"
+
+    app.dependency_overrides[get_optional_uid] = fake_uid
+    try:
+        answers = []
+        for i in range(1, 6):
+            q = make_question("math", 2, i)
+            answers.append(
+                {
+                    "question_index": i,
+                    "question_id": q["id"],
+                    "selected_answer": q["correct_answer"],
+                }
+            )
+        r = client.post(
+            "/api/quiz/complete",
+            json={"subject": "math", "level": 2, "answers": answers},
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        expected = compute_quiz_session_xp_raw(5, 5, 2)
+        assert body["correct"] == 5
+        assert body["gained_xp"] == expected
     finally:
         app.dependency_overrides.clear()

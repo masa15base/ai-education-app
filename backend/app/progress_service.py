@@ -79,12 +79,14 @@ def save_quiz_session(
     db = SessionLocal()
     try:
         day_start, day_end, _ = growth_service.utc_day_bounds()
+        day_start_n = day_start.astimezone(timezone.utc).replace(tzinfo=None)
+        day_end_n = day_end.astimezone(timezone.utc).replace(tzinfo=None)
         current_sum = (
             db.query(sqla_func.coalesce(sqla_func.sum(ProgressEntry.gained_xp), 0))
             .filter(
                 ProgressEntry.user_id == uid,
-                ProgressEntry.created_at >= day_start,
-                ProgressEntry.created_at < day_end,
+                ProgressEntry.created_at >= day_start_n,
+                ProgressEntry.created_at < day_end_n,
             )
             .scalar()
         )
@@ -176,18 +178,20 @@ def list_progress(uid: str, subject: Optional[str] = None) -> tuple[list[dict], 
 
 
 def latest_progress_entry_today_utc(uid: str) -> dict | None:
-    """サーバー UTC 当日の最新 ProgressEntry（無ければ None）。"""
+    """JST 当日の最新 ProgressEntry（無ければ None）。"""
     if SessionLocal is None:
         return None
     day_start, day_end, _ = growth_service.utc_day_bounds()
+    day_start_n = day_start.astimezone(timezone.utc).replace(tzinfo=None)
+    day_end_n = day_end.astimezone(timezone.utc).replace(tzinfo=None)
     db = SessionLocal()
     try:
         row = (
             db.query(ProgressEntry)
             .filter(
                 ProgressEntry.user_id == uid,
-                ProgressEntry.created_at >= day_start,
-                ProgressEntry.created_at < day_end,
+                ProgressEntry.created_at >= day_start_n,
+                ProgressEntry.created_at < day_end_n,
             )
             .order_by(ProgressEntry.created_at.desc())
             .first()

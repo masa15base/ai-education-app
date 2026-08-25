@@ -26,7 +26,7 @@ export function LoggedOutCTA({
       <p className="text-xs text-gray-600 mb-3 leading-relaxed">{description}</p>
       <div className="flex flex-wrap gap-2">
         <Button size="sm" className="kid-button" asChild>
-          <Link to="/login">ログインへ</Link>
+          <Link to="/login">ログインしてはじめる</Link>
         </Button>
         <Button size="sm" variant="outline" asChild>
           <Link to="/">ホームへ</Link>

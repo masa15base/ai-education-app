@@ -46,8 +46,15 @@ def test_next_evolution_remaining():
     stats = {**default_stats(), "has_character_image": True, "quiz_correct_count": 3}
     nxt = get_next_evolution_requirement(stats, 50)
     assert nxt["next_stage"] == "child"
+    assert nxt["next_stage_label"] == "こども"
     assert nxt["remaining_character_exp"] == 50
     assert nxt["remaining_quiz_correct_count"] == 2
+    assert nxt["current_character_exp"] == 50
+    assert isinstance(nxt["requirements"], list)
+    assert len(nxt["requirements"]) >= 2
+    keys = {r["key"] for r in nxt["requirements"]}
+    assert "character_exp" in keys
+    assert "quiz_correct_count" in keys
 
 
 def test_build_character_status_message():

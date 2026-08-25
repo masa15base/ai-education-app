@@ -17,17 +17,17 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from pydantic import BaseModel, Field
 
-from .deps import get_current_uid, init_firebase
+from .deps import get_current_uid, init_firebase, is_firebase_configured
 from .security_settings import is_production_hardened
 from .progress_service import append_progress, list_progress
-from .question_service import list_questions_for_quiz
-from .quiz_engine import make_questions
+from .question_service import questions_for_quiz
 from .routes import (
     answers,
     character as character_routes,
     chat,
     generate_character,
     image_preprocess,
+    question_bank_routes,
     quiz,
     stats,
     steps as steps_routes,
@@ -39,7 +39,17 @@ def _cors_origins() -> list[str]:
         "FRONTEND_ORIGINS",
         "http://localhost:5173,http://127.0.0.1:5173",
     )
-    return [o.strip() for o in raw.split(",") if o.strip()]
+    origins: list[str] = []
+    seen: set[str] = set()
+    for o in raw.split(","):
+        origin = o.strip().rstrip("/")
+        if origin and origin not in seen:
+            seen.add(origin)
+            origins.append(origin)
+    front_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+    if front_url and front_url not in seen:
+        origins.append(front_url)
+    return origins
 
 
 def _cors_regex() -> str | None:
@@ -114,6 +124,7 @@ app.include_router(image_preprocess.router, prefix="/api", tags=["image"])
 app.include_router(generate_character.router, prefix="/api", tags=["character"])
 app.include_router(stats.router, prefix="/api/stats", tags=["stats"])
 app.include_router(steps_routes.router, prefix="/api/steps", tags=["steps"])
+app.include_router(question_bank_routes.router, prefix="/api", tags=["questions"])
 
 _static_root = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.isdir(_static_root):
@@ -162,8 +173,9 @@ def _health_diagnostic_payload() -> dict[str, Any]:
         "replicate_configured": bool(os.getenv("REPLICATE_API_TOKEN")),
         "openai_configured": bool(os.getenv("OPENAI_API_KEY")),
         "character_vision_enabled": _character_vision_enabled(),
-        "firebase_admin_configured": bool(os.getenv("FIREBASE_CREDENTIALS_JSON")),
+        "firebase_admin_configured": is_firebase_configured(),
         "cors_origins_count": len(_cors_origins()),
+        "cors_origins": _cors_origins(),
     }
 
 
@@ -192,30 +204,15 @@ def connection_diagnostic() -> dict[str, Any]:
     return _health_diagnostic_payload()
 
 
-def _norm_subject_key(subject: str) -> str:
-    s = (subject or "").strip().lower()
-    if s in ("english", "英語", "eigo"):
-        return "english"
-    if s in ("math", "算数", "sansuu"):
-        return "math"
-    return s
-
-
 @app.get("/api/questions")
 def get_questions(subject: str, level: int, limit: int = 5):
     """
-    英語・算数: 常に `quiz_engine` の動的生成（英語4択・算数4択）。
-    その他の教科のみ JawsDB の `questions` を参照し、不足時は動的生成にフォールバック。
+    JawsDB の `questions` を優先（算数・英語含む）。
+    件数不足や DB 未設定時は `quiz_engine` の動的生成で補完。
     """
     try:
         lim = max(1, min(int(limit), 10))
-        key = _norm_subject_key(subject)
-        if key in ("english", "math"):
-            return make_questions(subject, level, lim)
-        db_rows = list_questions_for_quiz(subject, level, lim)
-        if len(db_rows) >= lim:
-            return db_rows[:lim]
-        return make_questions(subject, level, lim)
+        return questions_for_quiz(subject, level, lim)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"questions error: {e}")
 

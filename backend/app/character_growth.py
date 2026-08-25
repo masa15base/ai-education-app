@@ -11,7 +11,7 @@ from .steps_service import get_steps_today
 
 def sync_steps_xp(db: Session, uid: str, goal_steps: int = 5000) -> dict:
     """
-    当日 UTC の歩数と user_characters の steps_* 列からボーナス XP を計算し加算。
+    当日（JST）の歩数と user_characters の steps_* 列からボーナス XP を計算し加算。
     戻り値: xp_gained, detail(list[str]), experience, level, display_name, image_url
     """
     _, _, ymd = growth_service.utc_day_bounds()

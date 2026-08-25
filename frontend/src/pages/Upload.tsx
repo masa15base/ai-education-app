@@ -419,6 +419,72 @@ const UploadPage = () => {
                 alt="選択した手描き"
                 className="max-h-32 mx-auto rounded-xl border border-gray-200"
               />
+              {processedPreview && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-700 mb-2">
+                    手書き検出プレビュー（線画抽出）
+                  </p>
+                  <img
+                    src={processedPreview}
+                    alt="前処理プレビュー"
+                    className="max-h-32 mx-auto rounded-xl border border-gray-200"
+                  />
+                  <div className="mt-2 text-center">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline" size="sm" className="rounded-full text-xs">
+                          プレビューを拡大
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>前処理プレビュー（拡大）</DialogTitle>
+                          <DialogDescription>
+                            手書き線を抽出した画像です。線が薄すぎる・黒つぶれが多すぎる場合は撮り直しがおすすめです。
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs font-semibold text-gray-700 mb-1">原画像</p>
+                            <img
+                              src={previewUrl}
+                              alt="原画像プレビュー拡大"
+                              className="w-full max-h-[60vh] object-contain rounded-xl border border-gray-200 bg-white"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-700 mb-1">前処理後（線画）</p>
+                            <img
+                              src={processedPreview}
+                              alt="前処理プレビュー拡大"
+                              className="w-full max-h-[60vh] object-contain rounded-xl border border-gray-200 bg-white"
+                            />
+                          </div>
+                        </div>
+                        {preprocessMeta && (
+                          <p className="text-xs text-gray-500">
+                            線の濃さ: {Math.round((preprocessMeta.inkRatio ?? 0) * 100)}%
+                            {' / '}
+                            しきい値: {preprocessMeta.threshold ?? '-'}
+                          </p>
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  {preprocessMeta && (
+                    <div className="mt-2 text-center">
+                      <p className="text-xs text-gray-500">
+                        線の濃さ: {Math.round((preprocessMeta.inkRatio ?? 0) * 100)}%
+                        {' / '}
+                        しきい値: {preprocessMeta.threshold ?? '-'}
+                      </p>
+                      {qualityHint && (
+                        <p className="text-xs mt-1 text-amber-700">{qualityHint}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <p className="text-xs mt-2 text-center">
                 別の絵にする場合は、下の「別の画像を選び直す」から変更できます。
               </p>
@@ -612,7 +678,7 @@ const UploadPage = () => {
 
         {showDraftPanel && (
           <Card className="kid-card text-center">
-            {processedPreview && phase === 'form' && (
+            {processedPreview && (phase === 'form' || phase === 'processing') && (
               <div className="mb-4">
                 <p className="text-sm text-gray-700 mb-2">
                   手書き検出プレビュー（線画抽出）

@@ -40,12 +40,14 @@ export function englishFourOptions(
     pool.push(t);
     if (pool.length >= 4) break;
   }
+  let padI = 1;
   while (pool.length < 4) {
-    const pad = `（選択肢${pool.length + 1}）`;
-    if (!seen.has(pad)) {
+    const pad = `こたえ${padI}`;
+    padI += 1;
+    if (!seen.has(pad) && pad !== jpCorrect.trim()) {
       seen.add(pad);
       pool.push(pad);
-    } else break;
+    }
   }
   const orderKey = (s: string) => {
     let h = 0;
