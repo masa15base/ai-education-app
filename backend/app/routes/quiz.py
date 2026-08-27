@@ -162,4 +162,11 @@ def complete_quiz(
             "evolved": growth_result.get("evolved"),
             "previous_stage": growth_result.get("previous_stage"),
         }
+        if growth_result.get("evolved"):
+            if growth_result.get("image_url"):
+                out["growth"]["image_url"] = growth_result["image_url"]
+            if growth_result.get("hero_preview_url"):
+                out["growth"]["hero_preview_url"] = growth_result["hero_preview_url"]
+            if growth_result.get("next_stage_preview_url"):
+                out["growth"]["next_stage_preview_url"] = growth_result["next_stage_preview_url"]
     return out

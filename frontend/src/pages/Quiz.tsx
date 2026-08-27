@@ -8,7 +8,7 @@ import { ArrowLeft, Check, Lightbulb, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { postQuizComplete } from '@/lib/api';
 import { getApiBase } from '@/lib/apiBase';
-import { fetchCharacterFromServer } from '@/lib/characterState';
+import { fetchCharacterFromServer, loadCharacter, patchCharacter } from '@/lib/characterState';
 import { ENGLISH_VOCAB, englishFourOptions, englishVocabRowIndex } from '@/lib/englishQuizDynamic';
 import { ensureMathFourOptions, mathQuestionParts } from '@/lib/mathQuizDynamic';
 import { subjectJa } from '@/lib/subjectJa';
@@ -264,7 +264,22 @@ const Quiz = () => {
 
         if (res.saved) {
           await fetchCharacterFromServer();
-          if (gained > 0) {
+          if (res.growth?.evolved && res.growth.image_url) {
+            patchCharacter({
+              imageUrl: res.growth.image_url,
+              heroPreviewUrl: res.growth.hero_preview_url ?? loadCharacter().heroPreviewUrl,
+              nextEvolutionPreviewUrl:
+                res.growth.next_stage_preview_url ??
+                loadCharacter().nextEvolutionPreviewUrl,
+            });
+          }
+          if (res.growth?.evolved) {
+            toast({
+              title: '進化したよ！',
+              description: 'キャラの姿が変わったよ。ホームで確認してね',
+              duration: 4500,
+            });
+          } else if (gained > 0) {
             toast({
               title: `${gained} 経験値をゲット！`,
               description: 'クラウドに保存したよ',

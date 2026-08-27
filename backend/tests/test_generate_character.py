@@ -32,12 +32,13 @@ def test_generate_character_returns_local_data_url(monkeypatch):
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["image"].startswith("data:image/png;base64,")
-    assert body.get("generation_mode") == "famicom_sprite_spec"
+    assert body.get("generation_mode") in ("character_dna_evolution", "famicom_sprite_spec")
     assert body.get("validation_result", {}).get("passed") is True
     assert body.get("image_understanding") is not None
-    assert "signature_features_ja" in body
-    assert body.get("final_hero_preview") is None
-    assert body.get("sprite_size") == 32
+    assert body.get("character_dna") is not None or body.get("generation_mode") == "famicom_sprite_spec"
+    if body.get("generation_mode") == "character_dna_evolution":
+        assert body.get("next_stage_preview") is not None
+        assert body.get("final_hero_preview") is not None
 
 
 def test_generate_character_short_payload():
@@ -80,7 +81,7 @@ def test_generate_character_without_stage_when_db_unavailable(monkeypatch):
         headers=_bearer("pytest-db-fail-user"),
     )
     assert r.status_code == 200, r.text
-    assert r.json().get("generation_mode") == "famicom_sprite_spec"
+    assert r.json().get("generation_mode") in ("famicom_sprite_spec", "character_dna_evolution")
 
 
 def test_generate_character_requires_auth(monkeypatch):

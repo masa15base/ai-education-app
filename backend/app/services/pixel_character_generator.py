@@ -62,13 +62,53 @@ def generate_character_sprite_bundle(
     output_dir: str | Path | None = None,
     save_file: bool = True,
 ) -> dict[str, Any]:
-    _ = (stage, learning_level)
-    return generate_spec_sprite_bundle(
-        image_bytes,
-        character_profile=character_profile,
-        save_file=save_file,
-        output_dir=output_dir,
-    )
+    """手書き線画 bytes から進化対応スプライト bundle。失敗時は固定 spec にフォールバック。"""
+    import logging
+
+    from .evolution_generator import generate_evolution_bundle
+    from .evolution_visual_service import EVOLUTION_GENERATION_MODE
+    from .image_understanding import understand_image
+
+    logger = logging.getLogger(__name__)
+    stage_key = resolve_stage(stage, learning_level)
+    if stage_key == "egg":
+        stage_key = "baby"
+
+    try:
+        understanding = understand_image(image_bytes)
+        bundle = generate_evolution_bundle(
+            understanding,
+            stage_key=stage_key,
+            character_profile=character_profile,
+            save_file=save_file,
+            output_dir=output_dir,
+        )
+        meta = dict(bundle.get("meta") or {})
+        validation = meta.get("validation_result") or {}
+        if validation.get("passed") is False:
+            raise ValueError(
+                "evolution validation failed: "
+                + "; ".join(validation.get("issues") or [])
+            )
+        meta["generation_mode"] = EVOLUTION_GENERATION_MODE
+        return {
+            **bundle,
+            "character_dna": understanding.get("character_dna"),
+            "current_sprite": bundle.get("current_display"),
+            "meta": meta,
+        }
+    except Exception as exc:
+        logger.warning(
+            "Evolution sprite bundle failed (stage=%s), using fixed spec: %s",
+            stage_key,
+            exc,
+        )
+        return generate_spec_sprite_bundle(
+            image_bytes,
+            character_profile=character_profile,
+            save_file=save_file,
+            output_dir=output_dir,
+        )
 
 
 def generate_pixel_character_from_bytes(

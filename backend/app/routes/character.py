@@ -61,6 +61,8 @@ def put_character(
                 "activity_type": "character_born",
                 "hero_preview_url": body.hero_preview_url,
                 "next_stage_preview_url": body.next_stage_preview_url,
+                "character_dna": body.character_dna,
+                "image_understanding": body.image_understanding,
             },
         )
     return _row_to_out(row)
