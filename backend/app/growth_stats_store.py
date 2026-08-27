@@ -47,15 +47,21 @@ def _row_to_dict(row: models.UserCharacterGrowthStats) -> dict[str, Any]:
         "last_login_ymd": row.last_login_ymd,
         "has_character_image": bool(row.has_character_image),
         "excited_until": row.excited_until.isoformat() if row.excited_until else None,
-        **_preview_from_memory(row.user_id),
+        "hero_preview_url": row.hero_preview_url,
+        "next_stage_preview_url": row.next_stage_preview_url,
+        "character_dna": row.character_dna,
+        "image_understanding": row.image_understanding,
     }
 
 
 def _preview_from_memory(uid: str) -> dict[str, Any]:
+    """DB 列が無い / 未設定時のメモリ fallback。"""
     mem = _memory.get(uid, {})
     return {
         "hero_preview_url": mem.get("hero_preview_url"),
         "next_stage_preview_url": mem.get("next_stage_preview_url"),
+        "character_dna": mem.get("character_dna"),
+        "image_understanding": mem.get("image_understanding"),
     }
 
 
@@ -80,7 +86,12 @@ def get_stats(uid: str, db: Session | None = None) -> dict[str, Any]:
             .first()
         )
         if row:
-            return {**default_stats(), **_row_to_dict(row)}
+            data = {**default_stats(), **_row_to_dict(row)}
+            mem = _preview_from_memory(uid)
+            for key in ("hero_preview_url", "next_stage_preview_url", "character_dna", "image_understanding"):
+                if not data.get(key) and mem.get(key):
+                    data[key] = mem[key]
+            return data
         return {**default_stats(), **_preview_from_memory(uid)}
 
     if SessionLocal is None:
@@ -124,6 +135,10 @@ def _save_stats(uid: str, stats: dict[str, Any], db: Session) -> None:
         row.last_login_ymd = stats.get("last_login_ymd")
         row.has_character_image = bool(stats.get("has_character_image"))
         row.excited_until = excited_dt
+        row.hero_preview_url = stats.get("hero_preview_url")
+        row.next_stage_preview_url = stats.get("next_stage_preview_url")
+        row.character_dna = stats.get("character_dna")
+        row.image_understanding = stats.get("image_understanding")
     else:
         db.add(
             models.UserCharacterGrowthStats(
@@ -138,14 +153,28 @@ def _save_stats(uid: str, stats: dict[str, Any], db: Session) -> None:
                 last_login_ymd=stats.get("last_login_ymd"),
                 has_character_image=bool(stats.get("has_character_image")),
                 excited_until=excited_dt,
+                hero_preview_url=stats.get("hero_preview_url"),
+                next_stage_preview_url=stats.get("next_stage_preview_url"),
+                character_dna=stats.get("character_dna"),
+                image_understanding=stats.get("image_understanding"),
             )
         )
-    if stats.get("hero_preview_url") or stats.get("next_stage_preview_url"):
+    if (
+        stats.get("hero_preview_url")
+        or stats.get("next_stage_preview_url")
+        or stats.get("character_dna")
+        or stats.get("image_understanding")
+    ):
         set_preview_urls(
             uid,
             hero_preview_url=stats.get("hero_preview_url"),
             next_stage_preview_url=stats.get("next_stage_preview_url"),
         )
+        slot = _memory.setdefault(uid, {})
+        if stats.get("character_dna"):
+            slot["character_dna"] = stats["character_dna"]
+        if stats.get("image_understanding"):
+            slot["image_understanding"] = stats["image_understanding"]
 
 
 def _update_quiz_streak(stats: dict[str, Any], ymd: str) -> None:
@@ -243,23 +272,42 @@ def apply_activity(
             stats["hero_preview_url"] = activity["hero_preview_url"]
         if activity.get("next_stage_preview_url"):
             stats["next_stage_preview_url"] = activity["next_stage_preview_url"]
+        if activity.get("character_dna"):
+            stats["character_dna"] = activity["character_dna"]
+        if activity.get("image_understanding"):
+            stats["image_understanding"] = activity["image_understanding"]
         set_preview_urls(
             uid,
             hero_preview_url=stats.get("hero_preview_url"),
             next_stage_preview_url=stats.get("next_stage_preview_url"),
         )
+        slot = _memory.setdefault(uid, {})
+        if stats.get("character_dna"):
+            slot["character_dna"] = stats["character_dna"]
+        if stats.get("image_understanding"):
+            slot["image_understanding"] = stats["image_understanding"]
 
     character_exp = _char_exp(db, uid)
     new_stage = determine_character_stage(stats, character_exp)
     stats["stage"] = new_stage
     evolved = new_stage != prev_stage
+    evolution_visuals: dict[str, Any] | None = None
+    if evolved and new_stage not in ("egg",) and stats.get("character_dna"):
+        from .services.evolution_visual_service import apply_stage_visuals_to_character
+
+        evolution_visuals = apply_stage_visuals_to_character(
+            uid,
+            stats,
+            db,
+            stage=new_stage,
+        )
     if evolved:
         stats["excited_until"] = (_utc_now() + timedelta(hours=12)).isoformat()
 
     _save_stats(uid, stats, db)
     db.commit()
 
-    return {
+    result = {
         "stats": stats,
         "exp_gained": exp_gained,
         "stage": new_stage,
@@ -267,6 +315,11 @@ def apply_activity(
         "previous_stage": prev_stage,
         "character_exp": character_exp,
     }
+    if evolution_visuals:
+        result["image_url"] = evolution_visuals.get("image_url")
+        result["hero_preview_url"] = evolution_visuals.get("hero_preview_url")
+        result["next_stage_preview_url"] = evolution_visuals.get("next_stage_preview_url")
+    return result
 
 
 def _char_exp(db: Session, uid: str) -> int:
@@ -313,6 +366,10 @@ def apply_activity_memory(uid: str, activity: dict[str, Any]) -> dict[str, Any]:
             stats["hero_preview_url"] = activity["hero_preview_url"]
         if activity.get("next_stage_preview_url"):
             stats["next_stage_preview_url"] = activity["next_stage_preview_url"]
+        if activity.get("character_dna"):
+            stats["character_dna"] = activity["character_dna"]
+        if activity.get("image_understanding"):
+            stats["image_understanding"] = activity["image_understanding"]
 
     character_exp = int(stats.get("character_exp") or 0) + exp_gained
     stats["character_exp"] = character_exp

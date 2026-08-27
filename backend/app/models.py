@@ -81,6 +81,10 @@ class UserCharacterGrowthStats(Base):
     last_login_ymd = Column(String(10), nullable=True)
     has_character_image = Column(Boolean, nullable=False, default=False)
     excited_until = Column(DateTime, nullable=True)
+    hero_preview_url = Column(Text, nullable=True)
+    next_stage_preview_url = Column(Text, nullable=True)
+    character_dna = Column(JSON, nullable=True)
+    image_understanding = Column(JSON, nullable=True)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 

@@ -59,6 +59,8 @@ def default_stats() -> dict[str, Any]:
         "excited_until": None,
         "hero_preview_url": None,
         "next_stage_preview_url": None,
+        "character_dna": None,
+        "image_understanding": None,
     }
 
 

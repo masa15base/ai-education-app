@@ -216,6 +216,7 @@ const Index = () => {
     const stage = growthStatus.stage;
     const prev = prevGrowthStageRef.current;
     if (prev && prev !== stage) {
+      void fetchCharacterFromServer().then(() => setCharacter(loadCharacter()));
       toast({
         title: `進化したよ！${growthStatus.stage_label}になった！`,
         description: `${STAGE_EMOJI[stage] ?? '✨'} がんばったね`,

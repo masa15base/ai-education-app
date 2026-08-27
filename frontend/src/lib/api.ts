@@ -106,6 +106,9 @@ export async function postQuizComplete(
       stage?: string;
       evolved?: boolean;
       previous_stage?: string | null;
+      image_url?: string | null;
+      hero_preview_url?: string | null;
+      next_stage_preview_url?: string | null;
     };
   }>;
 }

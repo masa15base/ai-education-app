@@ -50,6 +50,14 @@ mysql "$JAWSDB_URL" < backend/scripts/heroku_add_growth_columns.sql
 - `progress_entries`: `gained_xp`（クイズ日次 XP 上限の集計用）
 - 成長統計テーブル: `user_character_growth_stats`（スクリプト内の定義に従う）
 
+進化ビジュアル永続化（`character_dna` / プレビュー URL）:
+
+```bash
+python backend/scripts/run_jawsdb_sql.py backend/scripts/heroku_add_evolution_visuals.sql
+```
+
+- `user_character_growth_stats`: `hero_preview_url`, `next_stage_preview_url`, `character_dna`, `image_understanding`
+
 ---
 
 ## 歩数 API（スケッチ・方針）
@@ -318,7 +326,7 @@ python scripts/upload_question_bank.py --stats-only
 
 - 歩数: ウェアラブル / OS ヘルス API からの**自動取り込みパイプライン**
 - チャット: 学習コンテキスト連携・履歴保存・保護者向け要約（プライバシー方針とセット）
-- キャラ進化ビジュアルの本実装
+- キャラ進化ビジュアルの本実装（DNA 保存・進化時に `image_url` 自動更新・プレビュー永続化）
 - CI（pytest + Playwright）の自動化
 - 課金・B2B などはプロダクト方針に応じて
 

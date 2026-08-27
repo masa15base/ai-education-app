@@ -44,7 +44,7 @@ def generate_character_capabilities() -> dict:
     from ..services.vision_client import is_character_vision_enabled, vision_model_name
 
     return {
-        "generation_mode": "famicom_sprite_spec",
+        "generation_mode": "character_dna_evolution",
         "image_generation_ai_enabled": False,
         "openai_configured": bool(os.getenv("OPENAI_API_KEY", "").strip()),
         "character_vision_enabled": is_character_vision_enabled(),
@@ -105,6 +105,8 @@ def generate_character(
         "vision_api_status": (meta.get("image_understanding") or {}).get("vision_api_status"),
         "stage": meta.get("stage"),
         "next_stage": meta.get("next_stage"),
+        "generation_mode": meta.get("generation_mode"),
+        "image_understanding": meta.get("image_understanding") or bundle.get("image_understanding"),
         "sprite_size": meta.get("sprite_size"),
         "pipeline": meta.get("pipeline"),
         "render_mode": meta.get("render_mode"),

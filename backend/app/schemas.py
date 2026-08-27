@@ -69,6 +69,8 @@ class CharacterUpsert(BaseModel):
     experience: int = Field(default=0, ge=0, le=1_000_000)
     hero_preview_url: Optional[str] = Field(default=None, max_length=2_000_000)
     next_stage_preview_url: Optional[str] = Field(default=None, max_length=2_000_000)
+    character_dna: Optional[dict] = None
+    image_understanding: Optional[dict] = None
 
 
 class CharacterOut(BaseModel):

@@ -10,6 +10,8 @@ export type CharacterState = {
   experience: number;
   heroPreviewUrl?: string | null;
   nextEvolutionPreviewUrl?: string | null;
+  characterDna?: Record<string, unknown> | null;
+  imageUnderstanding?: Record<string, unknown> | null;
 };
 
 export const DEFAULT_CHARACTER: CharacterState = {
@@ -95,6 +97,8 @@ export async function pushCharacterToServer(c: CharacterState): Promise<boolean>
         experience: c.experience,
         hero_preview_url: c.heroPreviewUrl ?? null,
         next_stage_preview_url: c.nextEvolutionPreviewUrl ?? null,
+        character_dna: c.characterDna ?? null,
+        image_understanding: c.imageUnderstanding ?? null,
       }),
     });
     if (!r.ok) return false;
@@ -129,6 +133,12 @@ export function patchCharacter(p: Partial<CharacterState>): CharacterState {
       p.nextEvolutionPreviewUrl !== undefined
         ? p.nextEvolutionPreviewUrl
         : cur.nextEvolutionPreviewUrl,
+    characterDna:
+      p.characterDna !== undefined ? p.characterDna : cur.characterDna,
+    imageUnderstanding:
+      p.imageUnderstanding !== undefined
+        ? p.imageUnderstanding
+        : cur.imageUnderstanding,
   };
   setCharacterMemory(next);
   return next;

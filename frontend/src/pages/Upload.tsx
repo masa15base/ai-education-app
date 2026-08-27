@@ -45,6 +45,8 @@ const UploadPage = () => {
   const [nextPreview, setNextPreview] = useState<string | null>(null);
   const [pickedFeatures, setPickedFeatures] = useState<string[]>([]);
   const [visionInsight, setVisionInsight] = useState<string | null>(null);
+  const [characterDna, setCharacterDna] = useState<Record<string, unknown> | null>(null);
+  const [imageUnderstanding, setImageUnderstanding] = useState<Record<string, unknown> | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   /** もう一度変換用（前処理済み base64・画像ファイルは保持） */
   const [preprocessedBase64, setPreprocessedBase64] = useState<string | null>(null);
@@ -145,6 +147,10 @@ const UploadPage = () => {
     setResultImage(image);
     setHeroPreview(gen.final_hero_preview ?? null);
     setNextPreview(gen.next_stage_preview ?? null);
+    setCharacterDna(gen.character_dna ?? null);
+    setImageUnderstanding(
+      (gen as { image_understanding?: Record<string, unknown> }).image_understanding ?? null,
+    );
     setPickedFeatures(
       gen.signature_features_ja?.length
         ? gen.signature_features_ja
@@ -155,9 +161,11 @@ const UploadPage = () => {
           ],
     );
     setVisionInsight(
-      gen.generation_mode === 'famicom_sprite_spec'
-        ? '固定デザインの少女ファミコン風キャラを生成しました'
-        : null,
+      gen.generation_mode === 'character_dna_evolution'
+        ? '手書きから進化プレビュー付きキャラを生成しました'
+        : gen.generation_mode === 'famicom_sprite_spec'
+          ? '固定デザインの少女ファミコン風キャラを生成しました'
+          : null,
     );
   };
 
@@ -210,8 +218,7 @@ const UploadPage = () => {
       }
 
       const char = loadCharacter();
-      const originalB64 = await readFileAsBase64(selectedFile);
-      const gen = await generateCharacterFromBase64(originalB64, {
+      const gen = await generateCharacterFromBase64(b64, {
         display_name: characterName.trim(),
         learning_level: levelFromExperience(char.experience),
       });
@@ -254,6 +261,8 @@ const UploadPage = () => {
         imageUrl: resultImage,
         heroPreviewUrl: heroPreview,
         nextEvolutionPreviewUrl: nextPreview,
+        characterDna,
+        imageUnderstanding,
       });
       setCharacterMemory(next);
       const saved = await pushCharacterToServer(next);
