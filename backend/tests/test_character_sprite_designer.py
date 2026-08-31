@@ -53,7 +53,7 @@ def test_render_not_black_blob():
     assert white > 32 * 32 * 0.35
 
 
-def test_bundle_uses_fixed_spec_sprite():
+def test_bundle_uses_dna_evolution_sprite():
     bundle = generate_character_sprite_bundle(
         _cute_face_png(),
         character_profile={"display_name": "テスト"},
@@ -61,6 +61,8 @@ def test_bundle_uses_fixed_spec_sprite():
         save_file=False,
     )
     assert bundle["current_display"].size == (DISPLAY_SIZE, DISPLAY_SIZE)
-    assert bundle["final_hero_preview"] is None
-    assert bundle["meta"]["render_mode"] == "famicom_sprite_spec"
+    assert bundle.get("character_dna") is not None
+    assert bundle["final_hero_preview"] is not None
+    assert bundle["meta"]["render_mode"] == "character_dna_fixed_template"
+    assert bundle["meta"].get("generation_mode") == "character_dna_evolution"
     assert next_stage_after("baby") == "child"

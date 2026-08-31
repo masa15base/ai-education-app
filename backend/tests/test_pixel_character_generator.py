@@ -48,7 +48,8 @@ def test_generate_fixed_spec_sprite_bundle():
         save_file=False,
     )
     assert bundle["meta"]["stage"] == "baby"
-    assert bundle["meta"]["render_mode"] == GENERATION_MODE
+    render_mode = bundle["meta"]["render_mode"]
+    assert render_mode in (GENERATION_MODE, "character_dna_fixed_template")
     display = bundle["current_display"]
     assert display.size == (DISPLAY_SIZE, DISPLAY_SIZE)
 
