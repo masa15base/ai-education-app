@@ -24,6 +24,7 @@ def _decode_image_bytes(image_base64: str) -> bytes:
 def generate_character_image(
     image_base64: str,
     *,
+    original_image_base64: str | None = None,
     learning_level: int = 1,
     stage: str | None = None,
     character_profile: dict | None = None,
@@ -32,12 +33,19 @@ def generate_character_image(
 ) -> tuple[str, dict]:
     """
     前処理済み線画 base64 → 512x512 ファミコン風 PNG data URL。
+    original_image_base64 があれば髪色・服色抽出に使用。
     戻り値: (data_url, meta)
     """
     profile = dict(character_profile or {})
     img_bytes = _decode_image_bytes(image_base64)
+    rgb_bytes = (
+        _decode_image_bytes(original_image_base64)
+        if original_image_base64
+        else None
+    )
     bundle = generate_character_sprite_bundle(
         img_bytes,
+        rgb_image_bytes=rgb_bytes,
         character_profile=profile,
         stage=stage,
         learning_level=learning_level,

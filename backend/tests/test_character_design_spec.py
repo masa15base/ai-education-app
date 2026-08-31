@@ -56,8 +56,9 @@ def test_bundle_includes_design_spec():
         stage="child",
         save_file=False,
     )
-    assert bundle["meta"]["render_mode"] == "famicom_sprite_spec"
-    assert bundle["meta"].get("generation_mode") == "famicom_sprite_spec"
+    assert bundle["meta"]["render_mode"] == "character_dna_fixed_template"
+    assert bundle["meta"].get("generation_mode") == "character_dna_evolution"
+    assert bundle.get("character_dna") is not None
     assert "signature_features_ja" in bundle["meta"]
     analysis = build_image_analysis(features)
     assert analysis["smile_likely"] is True

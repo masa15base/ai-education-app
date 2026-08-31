@@ -270,17 +270,27 @@ def understand_image_from_pil(
     }
 
 
-def understand_image(image_bytes: bytes) -> dict[str, Any]:
+def understand_image(
+    image_bytes: bytes,
+    *,
+    rgb_image_bytes: bytes | None = None,
+) -> dict[str, Any]:
     """
     PNG/JPEG bytes → image_understanding。
     Vision は schema JSON 抽出のみ。character_dna は normalize_character_dna() 経由。
+
+    image_bytes: 前処理済み線画（構造・インク解析用）
+    rgb_image_bytes: 元写真などカラー画像（髪色・服色・アクセント抽出 / Vision 入力）
     """
     from .character_dna import normalize_character_dna, rule_based_to_vision_result
     from .vision_client import fetch_vision_result, is_character_vision_enabled
 
-    raw_img = Image.open(io.BytesIO(image_bytes))
-    rgb = raw_img.convert("RGB")
-    line = _ensure_black_ink_on_white(raw_img.convert("L"))
+    line_img = Image.open(io.BytesIO(image_bytes))
+    line = _ensure_black_ink_on_white(line_img.convert("L"))
+    if rgb_image_bytes:
+        rgb = Image.open(io.BytesIO(rgb_image_bytes)).convert("RGB")
+    else:
+        rgb = line_img.convert("RGB")
     rule = understand_image_from_pil(line, rgb)
 
     vision_result = rule_based_to_vision_result(rule["raw_features"], rule["analysis"])
@@ -288,9 +298,10 @@ def understand_image(image_bytes: bytes) -> dict[str, Any]:
     vision_status = "rule_based"
     vision_error: str | None = None
 
+    vision_input = rgb_image_bytes or image_bytes
     if is_character_vision_enabled():
         rule["vision_api_attempted"] = True
-        vr, vision_err = fetch_vision_result(image_bytes)
+        vr, vision_err = fetch_vision_result(vision_input)
         if vr:
             vision_result = vr
             source = "vision_api"

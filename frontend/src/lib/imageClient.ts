@@ -117,6 +117,7 @@ export async function generateCharacterFromBase64(
     learning_level?: number;
     stage?: string;
     display_name?: string;
+    originalImageBase64?: string;
   },
 ): Promise<{
   image: string;
@@ -149,6 +150,7 @@ export async function generateCharacterFromBase64(
   if (opts?.learning_level != null) body.learning_level = opts.learning_level;
   if (opts?.stage) body.stage = opts.stage;
   if (opts?.display_name) body.display_name = opts.display_name;
+  if (opts?.originalImageBase64) body.originalImageBase64 = opts.originalImageBase64;
 
   const res = await fetch(`${getApiBase()}/generate-character`, {
     method: "POST",

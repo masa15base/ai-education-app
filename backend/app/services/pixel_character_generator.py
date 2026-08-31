@@ -1,7 +1,7 @@
 """
 キャラクター生成オーケストレーター。
 
-famicom_sprite_spec: 固定 character_spec から 32×32 少女 chibi を描画（自動判定なし）。
+character_dna_evolution: 手書き理解 → DNA → ステージ別スプライト（失敗時 famicom_sprite_spec）。
 """
 from __future__ import annotations
 
@@ -56,6 +56,7 @@ def analyze_features(
 def generate_character_sprite_bundle(
     image_bytes: bytes,
     *,
+    rgb_image_bytes: bytes | None = None,
     character_profile: dict | None = None,
     stage: str | None = None,
     learning_level: int = 1,
@@ -75,7 +76,10 @@ def generate_character_sprite_bundle(
         stage_key = "baby"
 
     try:
-        understanding = understand_image(image_bytes)
+        understanding = understand_image(
+            image_bytes,
+            rgb_image_bytes=rgb_image_bytes,
+        )
         bundle = generate_evolution_bundle(
             understanding,
             stage_key=stage_key,

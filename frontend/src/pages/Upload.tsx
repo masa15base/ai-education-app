@@ -218,9 +218,11 @@ const UploadPage = () => {
       }
 
       const char = loadCharacter();
+      const originalB64 = await readFileAsBase64(selectedFile);
       const gen = await generateCharacterFromBase64(b64, {
         display_name: characterName.trim(),
         learning_level: levelFromExperience(char.experience),
+        originalImageBase64: originalB64,
       });
       applyGenerationResult(gen);
       setPhase('confirm');

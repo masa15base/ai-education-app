@@ -103,17 +103,22 @@ def _center_symmetry_score(img: Image.Image) -> float:
     return min(left, right) / max(left, right)
 
 
-def _connected_character_regions(img: Image.Image) -> int:
-    """非背景の連結成分数（1体想定）。"""
+def _connected_character_regions(
+    img: Image.Image,
+    *,
+    ignore_top_fraction: float = 0.0,
+) -> int:
+    """非背景の連結成分数（1体想定）。小さなアクセント装飾は除外。"""
     rgb = img.convert("RGB")
     w, h = rgb.size
     px = rgb.load()
     seen: set[tuple[int, int]] = set()
     regions = 0
-    min_size = max(8, (w * h) // 200)
+    min_size = max(12, (w * h) // 80)
+    y_min = int(h * ignore_top_fraction) if ignore_top_fraction else 0
     for y in range(h):
         for x in range(w):
-            if (x, y) in seen or _is_background(px[x, y]):
+            if y < y_min or (x, y) in seen or _is_background(px[x, y]):
                 continue
             stack = [(x, y)]
             size = 0
@@ -121,7 +126,7 @@ def _connected_character_regions(img: Image.Image) -> int:
                 cx, cy = stack.pop()
                 if (cx, cy) in seen or cx < 0 or cy < 0 or cx >= w or cy >= h:
                     continue
-                if _is_background(px[cx, cy]):
+                if cy < y_min or _is_background(px[cx, cy]):
                     continue
                 seen.add((cx, cy))
                 size += 1
@@ -183,7 +188,7 @@ def validate_generated_image(
         issues.append("hair_style_mismatch")
 
     eye_blobs = _count_eye_like_blobs(pixel)
-    if eye_blobs < 2:
+    if stage not in ("egg", "baby") and eye_blobs < 2:
         issues.append("eye_count_not_two")
 
     if _white_background_ratio(pixel) < 0.45:
@@ -192,11 +197,16 @@ def validate_generated_image(
     if _center_symmetry_score(pixel) < 0.35:
         issues.append("not_front_view")
 
-    if _connected_character_regions(pixel) > 2:
+    body_regions = _connected_character_regions(pixel, ignore_top_fraction=0.12)
+    if body_regions > 3:
         issues.append("multiple_characters")
 
     accent_key = locked.get("accent_color", "mint_green")
-    if locked.get("accessory") == "star" and accent_key != "none":
+    if (
+        stage not in ("egg", "baby")
+        and locked.get("accessory") == "star"
+        and accent_key != "none"
+    ):
         expected_accent = ACCENT_COLOR_RGB.get(accent_key, ACCENT_COLOR_RGB["mint_green"])
         if colors and not any(_color_near(c, expected_accent, tol=60) for c in colors[:8]):
             issues.append("accent_color_missing")

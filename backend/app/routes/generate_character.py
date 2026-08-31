@@ -25,6 +25,11 @@ class GenerateCharacterBody(BaseModel):
         max_length=_MAX_B64,
         description="前処理済み PNG の base64（data URL 可）",
     )
+    originalImageBase64: str | None = Field(
+        default=None,
+        max_length=_MAX_B64,
+        description="元写真の base64（髪色・服色・Vision 用。省略時は imageBase64 を使用）",
+    )
     prompt: str | None = Field(
         default=None,
         max_length=2000,
@@ -72,6 +77,7 @@ def generate_character(
                     stage = "baby"
         data_url, meta = generate_character_image(
             body.imageBase64,
+            original_image_base64=body.originalImageBase64,
             learning_level=body.learning_level,
             stage=stage,
             character_profile=profile,
