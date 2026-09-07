@@ -19,6 +19,19 @@ export const STAGE_EMOJI: Record<string, string> = {
   hero: "⭐",
 };
 
+export const STAGE_PREVIEW_HINT_JA: Record<GrowthStageId, string> = {
+  egg: "たまごの姿",
+  baby: "小さな chibi の姿",
+  child: "★ が付いて元気になる",
+  student: "学生帽と本を持つ",
+  hero: "マントと王冠のヒーロー",
+};
+
+export function stagePreviewHint(stage: string | null | undefined): string {
+  if (!stage) return "";
+  return STAGE_PREVIEW_HINT_JA[stage as GrowthStageId] ?? "";
+}
+
 export type EvolutionRequirement = {
   key: string;
   label: string;

@@ -29,7 +29,11 @@ import {
   HOME_ACTION_ANIM,
   type CharacterGrowthStatus,
 } from '@/lib/characterStatusApi';
-import { STAGE_EMOJI } from '@/lib/growthDisplay';
+import { STAGE_EMOJI, stageLabel, stagePreviewHint } from '@/lib/growthDisplay';
+import {
+  EvolutionPreviewStrip,
+  buildPreviewItems,
+} from '@/components/EvolutionPreviewStrip';
 import {
   EvolutionProgressCard,
   GrowthStageRoadmap,
@@ -96,6 +100,15 @@ const Index = () => {
       growthStatus?.next_evolution?.next_stage ??
       '',
   );
+  const nextStageKey =
+    growthStatus?.next_evolution?.next_stage ??
+    (growthStage === 'baby'
+      ? 'child'
+      : growthStage === 'child'
+        ? 'student'
+        : growthStage === 'student'
+          ? 'hero'
+          : null);
 
   useEffect(() => {
     void (async () => {
@@ -505,58 +518,23 @@ const Index = () => {
           </div>
 
           {(heroPreviewUrl || nextPreviewUrl) && (
-            <div className="mb-5 rounded-2xl bg-gradient-to-r from-amber-50 to-lavender-soft/30 p-4 border border-amber-200/60">
-              <p className="text-sm font-bold text-navy-dark mb-3">
-                🎮 進化プレビュー
-              </p>
-              <div className="flex justify-center items-end gap-3 flex-wrap">
-                <div className="text-center">
-                  <p className="text-xs text-gray-600 mb-1">いま</p>
-                  {character.imageUrl && !imgBroken ? (
-                    <img
-                      src={character.imageUrl}
-                      alt="現在"
-                      className="h-16 w-16 object-contain bg-white rounded-lg border-2 border-mint-soft"
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                  ) : (
-                    <span className="text-3xl">{STAGE_EMOJI[growthStage]}</span>
-                  )}
-                </div>
-                {nextPreviewUrl && (
-                  <>
-                    <span className="text-xl text-lavender-soft">→</span>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-600 mb-1">
-                        次{nextStageName ? `（${nextStageName}）` : ''}
-                      </p>
-                      <img
-                        src={nextPreviewUrl}
-                        alt="次の進化"
-                        className="h-16 w-16 object-contain bg-white rounded-lg border-2 border-sky-soft/50 opacity-90"
-                        style={{ imageRendering: 'pixelated' }}
-                      />
-                    </div>
-                  </>
-                )}
-                {heroPreviewUrl && (
-                  <>
-                    <span className="text-xl text-amber-400">→</span>
-                    <div className="text-center">
-                      <p className="text-xs font-bold text-amber-700 mb-1">
-                        ヒーロー
-                      </p>
-                      <img
-                        src={heroPreviewUrl}
-                        alt="最終進化"
-                        className="h-20 w-20 object-contain bg-white rounded-lg border-2 border-amber-300 shadow-sm"
-                        style={{ imageRendering: 'pixelated' }}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+            <EvolutionPreviewStrip
+              className="mb-5"
+              size="md"
+              items={buildPreviewItems({
+                currentImageUrl:
+                  character.imageUrl && !imgBroken ? character.imageUrl : undefined,
+                currentStage: growthStage,
+                currentHint: stagePreviewHint(growthStage),
+                nextImageUrl: nextPreviewUrl,
+                nextStage: nextStageKey ?? undefined,
+                nextHint: nextStageKey
+                  ? stagePreviewHint(nextStageKey)
+                  : nextStageName || undefined,
+                heroImageUrl: heroPreviewUrl,
+                heroHint: stagePreviewHint('hero'),
+              })}
+            />
           )}
 
           {growthStatus && (

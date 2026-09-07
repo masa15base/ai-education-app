@@ -33,6 +33,8 @@ import {
   isAllowedCharacterInputFile,
   type CharacterImageRequirements,
 } from '@/lib/characterImageRequirements';
+import { EvolutionPreviewStrip, buildPreviewItems } from '@/components/EvolutionPreviewStrip';
+import { stageLabel } from '@/lib/growthDisplay';
 
 const UploadPage = () => {
   const navigate = useNavigate();
@@ -43,6 +45,11 @@ const UploadPage = () => {
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [heroPreview, setHeroPreview] = useState<string | null>(null);
   const [nextPreview, setNextPreview] = useState<string | null>(null);
+  const [previewStage, setPreviewStage] = useState<string | null>(null);
+  const [nextPreviewStage, setNextPreviewStage] = useState<string | null>(null);
+  const [currentPreviewHint, setCurrentPreviewHint] = useState<string | null>(null);
+  const [nextPreviewHint, setNextPreviewHint] = useState<string | null>(null);
+  const [heroPreviewHint, setHeroPreviewHint] = useState<string | null>(null);
   const [pickedFeatures, setPickedFeatures] = useState<string[]>([]);
   const [visionInsight, setVisionInsight] = useState<string | null>(null);
   const [characterDna, setCharacterDna] = useState<Record<string, unknown> | null>(null);
@@ -91,6 +98,11 @@ const UploadPage = () => {
     setResultImage(null);
     setHeroPreview(null);
     setNextPreview(null);
+    setPreviewStage(null);
+    setNextPreviewStage(null);
+    setCurrentPreviewHint(null);
+    setNextPreviewHint(null);
+    setHeroPreviewHint(null);
     setPickedFeatures([]);
     setVisionInsight(null);
     setIsRegenerating(false);
@@ -147,6 +159,20 @@ const UploadPage = () => {
     setResultImage(image);
     setHeroPreview(gen.final_hero_preview ?? null);
     setNextPreview(gen.next_stage_preview ?? null);
+    const genMeta = gen as {
+      stage?: string;
+      next_stage?: string;
+      stage_label_ja?: string;
+      next_stage_label_ja?: string;
+      next_stage_preview_hint_ja?: string;
+      hero_preview_hint_ja?: string;
+      current_preview_hint_ja?: string;
+    };
+    setPreviewStage(genMeta.stage ?? null);
+    setNextPreviewStage(genMeta.next_stage ?? null);
+    setCurrentPreviewHint(genMeta.current_preview_hint_ja ?? null);
+    setNextPreviewHint(genMeta.next_stage_preview_hint_ja ?? null);
+    setHeroPreviewHint(genMeta.hero_preview_hint_ja ?? null);
     setCharacterDna(gen.character_dna ?? null);
     setImageUnderstanding(
       (gen as { image_understanding?: Record<string, unknown> }).image_understanding ?? null,
@@ -576,43 +602,36 @@ const UploadPage = () => {
             )}
 
             <div className="mb-6 rounded-2xl bg-white/80 border border-sky-soft/40 p-4">
-              <p className="text-sm font-bold text-navy-dark mb-3">今の姿</p>
+              <p className="text-sm font-bold text-navy-dark mb-1">今の姿</p>
+              {previewStage && (
+                <p className="text-xs text-gray-600 mb-3">
+                  {stageLabel(previewStage)}
+                  {currentPreviewHint ? ` · ${currentPreviewHint}` : ''}
+                </p>
+              )}
               <img
                 src={resultImage}
                 alt={`${characterName} 今の姿`}
-                className={`max-h-72 mx-auto rounded-2xl border-4 border-sky-soft/40 shadow-lg bg-white ${isRegenerating ? 'opacity-40' : ''}`}
+                className={`max-h-80 mx-auto rounded-2xl border-4 border-sky-soft/40 shadow-lg bg-white ${isRegenerating ? 'opacity-40' : ''}`}
                 style={{ imageRendering: 'pixelated' }}
               />
             </div>
 
-            {(nextPreview || heroPreview) && (
-              <div className="mb-6 rounded-2xl bg-amber-50/80 border border-amber-200 p-4">
-                <p className="text-sm font-bold text-navy-dark mb-3">進化プレビュー</p>
-                <div className="flex justify-center items-end gap-6 flex-wrap">
-                  {nextPreview && (
-                    <div className="text-center">
-                      <p className="text-xs font-semibold text-gray-700 mb-2">次の進化</p>
-                      <img
-                        src={nextPreview}
-                        alt="次の進化"
-                        className="h-24 w-24 object-contain bg-white rounded-xl border-2 border-sky-soft/40"
-                        style={{ imageRendering: 'pixelated' }}
-                      />
-                    </div>
-                  )}
-                  {heroPreview && (
-                    <div className="text-center">
-                      <p className="text-xs font-semibold text-amber-800 mb-2">最終ヒーロー</p>
-                      <img
-                        src={heroPreview}
-                        alt="最終ヒーロー"
-                        className="h-28 w-28 object-contain bg-white rounded-xl border-2 border-amber-300 shadow-md"
-                        style={{ imageRendering: 'pixelated' }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+            {(nextPreview || heroPreview) && resultImage && (
+              <EvolutionPreviewStrip
+                className="mb-6 text-left"
+                items={buildPreviewItems({
+                  currentImageUrl: resultImage,
+                  currentStage: previewStage,
+                  currentHint: currentPreviewHint,
+                  nextImageUrl: nextPreview,
+                  nextStage: nextPreviewStage,
+                  nextHint: nextPreviewHint,
+                  heroImageUrl: heroPreview,
+                  heroHint: heroPreviewHint,
+                }).filter((item) => item.key !== 'current')}
+                title="この先の進化イメージ"
+              />
             )}
 
             {pickedFeatures.length > 0 && (
