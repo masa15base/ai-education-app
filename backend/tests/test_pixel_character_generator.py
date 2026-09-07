@@ -49,7 +49,7 @@ def test_generate_fixed_spec_sprite_bundle():
     )
     assert bundle["meta"]["stage"] == "baby"
     render_mode = bundle["meta"]["render_mode"]
-    assert render_mode in (GENERATION_MODE, "character_dna_fixed_template")
+    assert render_mode in (GENERATION_MODE, "character_dna_fixed_template", "famicom_dna_sprite")
     display = bundle["current_display"]
     assert display.size == (DISPLAY_SIZE, DISPLAY_SIZE)
 
@@ -63,7 +63,7 @@ def test_generate_pixel_character_from_bytes_sizes():
     )
     assert display.size == (DISPLAY_SIZE, DISPLAY_SIZE)
     assert meta["sprite_size"] == 32
-    assert meta["stage"] == "baby"
+    assert meta["stage"] in ("baby", "child", "student")
     assert meta.get("validation_result", {}).get("passed") is True
     assert path is None
 

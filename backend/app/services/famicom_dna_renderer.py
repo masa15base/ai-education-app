@@ -11,7 +11,8 @@ from PIL import Image
 
 from .base_character_generator import build_egg_sprite
 from .character_dna import ACCENT_COLOR_RGB, HAIR_COLOR_RGB
-from .famicom_sprite_common import DISPLAY_SIZE, decorate_stage, upscale_nearest
+from .evolution_preview_compose import frame_sprite_display
+from .famicom_sprite_common import decorate_stage
 from .famicom_sprite_generator import (
     COLOR_BY_NAME,
     SpriteSpec,
@@ -107,7 +108,7 @@ def render_famicom_stage_from_dna(
     if stage == "egg":
         base = build_egg_sprite(SPRITE_SIZE)
         pixel = base
-        display = upscale_nearest(pixel, DISPLAY_SIZE)
+        display = frame_sprite_display(pixel, stage)
         return base, pixel, display, {"passed": True, "issues": [], "stage": stage}
 
     sprite_spec = build_sprite_spec_from_dna(character_dna)
@@ -116,7 +117,7 @@ def render_famicom_stage_from_dna(
         pixel = base
     else:
         pixel = decorate_stage(base, stage)
-    display = upscale_nearest(pixel, DISPLAY_SIZE)
+    display = frame_sprite_display(pixel, stage)
 
     result = _validate_dna_sprite(pixel, stage)
     return base, pixel, display, result

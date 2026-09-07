@@ -15,6 +15,11 @@ from .character_dna import (
     signature_features_ja_from_dna,
 )
 from .character_sprite_designer import STAGES_ORDER, next_stage_after
+from .evolution_preview_compose import (
+    preview_meta_for_stage,
+    stage_label_ja,
+    stage_preview_hint_ja,
+)
 from .famicom_dna_renderer import FAMICOM_DNA_RENDER_MODE, render_famicom_stage_from_dna
 from .pixel_art_converter import DISPLAY_SIZE
 
@@ -107,8 +112,17 @@ def generate_evolution_bundle(
 
     generation_prompt = build_generation_prompt(character_dna, stage_key)
 
+    next_meta = preview_meta_for_stage(nxt) if nxt else {}
+    hero_meta = preview_meta_for_stage("hero")
+
     meta: dict[str, Any] = {
         "stage": stage_key,
+        "stage_label_ja": stage_label_ja(stage_key),
+        "current_preview_hint_ja": stage_preview_hint_ja(stage_key),
+        "next_stage_label_ja": next_meta.get("stage_label_ja"),
+        "next_stage_preview_hint_ja": next_meta.get("preview_hint_ja"),
+        "hero_stage_label_ja": hero_meta.get("stage_label_ja"),
+        "hero_preview_hint_ja": hero_meta.get("preview_hint_ja"),
         "render_mode": FAMICOM_DNA_RENDER_MODE,
         "pipeline": [
             "vision_result_extraction",

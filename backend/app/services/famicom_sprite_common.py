@@ -86,23 +86,45 @@ def _draw_star(draw: ImageDraw.ImageDraw, cx: int, cy: int, r: int, fill: tuple[
 
 
 def decorate_stage(sprite: Image.Image, stage: str) -> Image.Image:
+    """ステージ装飾（進化の違いが一目でわかるよう強調）。"""
     if stage in ("egg", "baby"):
         return sprite
     out = sprite.copy()
     s = out.size[0]
     draw = ImageDraw.Draw(out)
     if stage == "child":
-        _draw_star(draw, s - 3, 2, 2, GREEN)
+        # 頭上に大きめの星（進化の目印）
+        cx = s // 2
+        for dx, dy in ((0, 0), (-1, 0), (1, 0), (0, -1), (0, 1)):
+            draw.point((cx + dx, 1 + dy), fill=GREEN)
+        draw.point((cx, 0), fill=GREEN)
+        # ほっぺ横に小さなキラキラ
+        draw.point((4, s // 2), fill=GREEN)
+        draw.point((s - 5, s // 2), fill=GREEN)
     elif stage == "student":
-        cap_w = max(4, s // 5)
-        cap_h = max(2, s // 14)
+        cap_w = max(6, s // 4)
+        cap_h = max(3, s // 10)
         left = (s - cap_w) // 2
+        # 学士帽
         draw.rectangle([left, 1 + cap_h, left + cap_w, 1 + cap_h * 2], fill=BLACK)
-        draw.rectangle([left - 1, 1, left + cap_w + 1, 1 + cap_h], fill=BLACK)
-        draw.rectangle([s - 5, s - 6, s - 2, s - 2], fill=BLUE, outline=BLACK)
+        draw.rectangle([left - 1, 0, left + cap_w + 1, 1 + cap_h], fill=BLACK)
+        draw.point((left + cap_w // 2, 0), fill=BLACK)
+        # 本（赤表紙）
+        draw.rectangle([s - 6, s - 8, s - 2, s - 3], fill=RED, outline=BLACK)
+        draw.line([s - 5, s - 7, s - 3, s - 7], fill=WHITE)
     elif stage == "hero":
-        _draw_star(draw, s // 2, s - 4, 2, GREEN)
-        cape_y0 = int(s * 0.42)
-        draw.polygon([(0, cape_y0), (s // 5, s - 2), (s // 5, cape_y0)], fill=BLUE)
-        draw.polygon([(s, cape_y0), (s - s // 5, s - 2), (s - s // 5, cape_y0)], fill=BLUE)
+        # 王冠
+        mid = s // 2
+        for x in range(mid - 3, mid + 4):
+            draw.point((x, 0), fill=ORANGE)
+        draw.point((mid - 2, 1), fill=ORANGE)
+        draw.point((mid, 0), fill=ORANGE)
+        draw.point((mid + 2, 1), fill=ORANGE)
+        # マント（左右を広めに）
+        cape_y0 = int(s * 0.38)
+        draw.polygon([(0, cape_y0), (s // 4, s - 1), (s // 4, cape_y0)], fill=BLUE)
+        draw.polygon([(s - 1, cape_y0), (s - s // 4, s - 1), (s - s // 4, cape_y0)], fill=BLUE)
+        # 胸バッジ + 足元の星
+        draw.rectangle([mid - 2, s // 2, mid + 2, s // 2 + 3], fill=ORANGE, outline=BLACK)
+        _draw_star(draw, mid, s - 3, 2, GREEN)
     return add_exterior_outline(snap_to_palette(out))
