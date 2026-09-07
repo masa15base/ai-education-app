@@ -126,17 +126,20 @@ def _normalize_accessory(raw: str) -> str:
 
 def build_sprite_spec(character_spec: dict[str, Any] | None = None) -> SpriteSpec:
     spec = {**FIXED_MVP_CHARACTER_SPEC, **(character_spec or {})}
+    hair_key = str(spec["hair_color"])
+    hair_rgb = spec.get("_hair_rgb") or COLOR_BY_NAME.get(hair_key, COLOR_BY_NAME["dark_navy"])
+    accent_rgb = spec.get("_accent_rgb") or COLOR_BY_NAME["mint_green"]
     return SpriteSpec(
         gender=str(spec["gender"]),
         hair_style=str(spec["hair_style"]),
-        hair_rgb=COLOR_BY_NAME[str(spec["hair_color"])],
+        hair_rgb=tuple(hair_rgb),
         bangs=str(spec.get("bangs", "straight")),
         face_shape=str(spec["face_shape"]),
         eye_style=str(spec["eye_style"]),
         mouth=str(spec.get("mouth", "none")),
         cheeks=bool(spec.get("cheeks", True)),
         accessory=_normalize_accessory(str(spec.get("accessory", "mint_green_star"))),
-        accent_rgb=COLOR_BY_NAME["mint_green"],
+        accent_rgb=tuple(accent_rgb),
         top_rgb=COLOR_BY_NAME[str(spec.get("top_color", spec.get("outfit_color", "blue")))],
         ribbon_rgb=COLOR_BY_NAME[str(spec.get("ribbon_color", "orange"))],
         skirt_rgb=COLOR_BY_NAME[str(spec.get("skirt_color", "grey"))],

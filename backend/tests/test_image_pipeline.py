@@ -46,11 +46,11 @@ def test_bundle_has_required_api_fields():
     bundle = generate_character_sprite_bundle(_cute_face_png(), stage="child", save_file=False)
     meta = bundle["meta"]
     mode = meta.get("generation_mode") or meta.get("render_mode")
-    assert mode in ("character_dna_evolution", "character_dna_fixed_template", "famicom_sprite_spec")
+    assert mode in ("character_dna_evolution", "famicom_dna_sprite", "famicom_sprite_spec")
     assert meta.get("image_understanding") is not None
     assert meta.get("validation_result", {}).get("passed") is True
     assert bundle.get("current_sprite") is not None or bundle.get("current_display") is not None
-    if mode == "character_dna_evolution" or meta.get("render_mode") == "character_dna_fixed_template":
+    if meta.get("generation_mode") == "character_dna_evolution":
         assert bundle.get("character_dna") is not None
         assert bundle.get("final_hero_preview") is not None
         assert bundle.get("next_stage_preview") is not None

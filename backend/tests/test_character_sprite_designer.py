@@ -63,6 +63,6 @@ def test_bundle_uses_dna_evolution_sprite():
     assert bundle["current_display"].size == (DISPLAY_SIZE, DISPLAY_SIZE)
     assert bundle.get("character_dna") is not None
     assert bundle["final_hero_preview"] is not None
-    assert bundle["meta"]["render_mode"] == "character_dna_fixed_template"
+    assert bundle["meta"]["render_mode"] == "famicom_dna_sprite"
     assert bundle["meta"].get("generation_mode") == "character_dna_evolution"
     assert next_stage_after("baby") == "child"

@@ -13,18 +13,17 @@ from .character_dna import (
     build_generation_prompt,
     build_stage_spec,
     signature_features_ja_from_dna,
-    stage_spec_to_render_spec,
 )
 from .character_sprite_designer import STAGES_ORDER, next_stage_after
-from .generated_image_check import render_stage_with_spec, validate_and_retry_once
+from .famicom_dna_renderer import FAMICOM_DNA_RENDER_MODE, render_famicom_stage_from_dna
 from .pixel_art_converter import DISPLAY_SIZE
 
 STAGE_PIXEL: dict[str, dict[str, int]] = {
     "egg": {"sprite": 32, "max_colors": 4},
-    "baby": {"sprite": 48, "max_colors": 7},
-    "child": {"sprite": 64, "max_colors": 9},
-    "student": {"sprite": 64, "max_colors": 10},
-    "hero": {"sprite": 64, "max_colors": 12},
+    "baby": {"sprite": 32, "max_colors": 8},
+    "child": {"sprite": 32, "max_colors": 8},
+    "student": {"sprite": 32, "max_colors": 8},
+    "hero": {"sprite": 32, "max_colors": 8},
 }
 
 
@@ -46,23 +45,13 @@ def _render_stage_pipeline(
     """(base, pixel, display, render_spec, stage_spec, validation_result)"""
     character_dna = _dna_from_understanding(image_understanding)
     stage_spec = build_stage_spec(character_dna, stage)
-    cfg = STAGE_PIXEL.get(stage, STAGE_PIXEL["baby"])
-    sprite = int(cfg["sprite"])
-    max_colors = int(cfg["max_colors"])
-
-    base, pixel, display = render_stage_with_spec(
-        stage_spec, sprite=sprite, max_colors=max_colors, strict=False
-    )
-    base, pixel, display, validation = validate_and_retry_once(
-        base,
-        pixel,
-        display,
-        character_dna,
-        stage_spec,
-        sprite=sprite,
-        max_colors=max_colors,
-    )
-    render_spec = stage_spec_to_render_spec(stage_spec, strict=validation.get("retried", False))
+    base, pixel, display, validation = render_famicom_stage_from_dna(character_dna, stage)
+    render_spec = {
+        "render_mode": FAMICOM_DNA_RENDER_MODE,
+        "stage": stage,
+        "sprite_size": STAGE_PIXEL.get(stage, STAGE_PIXEL["baby"])["sprite"],
+        "character_dna": character_dna,
+    }
     return base, pixel, display, render_spec, stage_spec, validation
 
 
@@ -120,14 +109,14 @@ def generate_evolution_bundle(
 
     meta: dict[str, Any] = {
         "stage": stage_key,
-        "render_mode": "character_dna_fixed_template",
+        "render_mode": FAMICOM_DNA_RENDER_MODE,
         "pipeline": [
             "vision_result_extraction",
             "normalize_character_dna",
             "build_stage_spec",
-            "fixed_template_render",
-            "pixel_art_conversion",
-            "generated_image_check",
+            "famicom_pixel_compose_32",
+            "stage_decorate",
+            "nearest_upscale_512",
         ],
         "image_understanding": image_understanding,
         "vision_result": image_understanding.get("vision_result"),
