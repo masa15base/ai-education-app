@@ -333,7 +333,7 @@ const UploadPage = () => {
   })();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lavender-light via-mint-light to-sky-light p-4">
+    <div className="app-page">
       {/* ヘッダー */}
       <div className="flex items-center mb-6">
         <Button 
@@ -352,7 +352,7 @@ const UploadPage = () => {
         {/* アップロードエリア */}
         <Card className="kid-card mb-6">
           <h2 className="text-xl font-bold text-center mb-6 text-navy-dark">描いた絵をアップロードしよう！</h2>
-          <div className="text-xs text-gray-600 bg-sky-50/80 border border-sky-200 rounded-xl p-3 mb-3">
+          <div className="text-xs text-gray-600 surface-muted mb-3">
             <p className="font-semibold text-navy-dark mb-1">画像のファイル形式</p>
             <ul className="space-y-1 list-disc pl-4">
               <li>
@@ -656,7 +656,7 @@ const UploadPage = () => {
               <Button
                 onClick={() => void handleConfirmOk()}
                 disabled={isRegenerating}
-                className="kid-button text-lg py-5 px-10 bg-green-500 hover:bg-green-600"
+                className="kid-button text-lg py-5 px-10"
               >
                 OK（このキャラにする）
               </Button>

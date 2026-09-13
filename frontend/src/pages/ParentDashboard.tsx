@@ -180,7 +180,7 @@ const ParentDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="app-page">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
           <Button

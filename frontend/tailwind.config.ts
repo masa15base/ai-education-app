@@ -63,23 +63,22 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// 子ども向けパステルカラー
-				'lavender-light': '#F3F0FF',
-				'lavender-soft': '#C4B5FD',
-				'mint-light': '#F0FDF4',
-				'mint-soft': '#86EFAC',
-				'sky-light': '#F0F9FF',
-				'sky-soft': '#93C5FD',
-				'pink-soft': '#F9A8D4',
-				'purple-soft': '#C084FC',
-				'navy-dark': '#2A2A44',
-				// 子ども向けテーマカラー
-				'kid-pink': '#FFB7C5',
-				'kid-blue': '#87CEEB',
-				'kid-yellow': '#FFE135',
-				'kid-green': '#98FB98',
-				'kid-purple': '#DDA0DD',
-				'kid-orange': '#FFB347'
+				/* Legacy names → simplified palette (neutral + blue) */
+				'lavender-light': '#F8FAFC',
+				'lavender-soft': '#64748B',
+				'mint-light': '#F8FAFC',
+				'mint-soft': '#CBD5E1',
+				'sky-light': '#F8FAFC',
+				'sky-soft': '#2563EB',
+				'pink-soft': '#E2E8F0',
+				'purple-soft': '#64748B',
+				'navy-dark': '#0F172A',
+				'kid-pink': '#F1F5F9',
+				'kid-blue': '#EFF6FF',
+				'kid-yellow': '#F8FAFC',
+				'kid-green': '#F1F5F9',
+				'kid-purple': '#F8FAFC',
+				'kid-orange': '#F1F5F9'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

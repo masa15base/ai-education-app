@@ -18,9 +18,9 @@ type Props = {
 };
 
 const toneClass: Record<NonNullable<EvolutionPreviewItem['tone']>, string> = {
-  current: 'border-mint-soft bg-mint-soft/20',
-  next: 'border-sky-soft bg-sky-50',
-  hero: 'border-amber-300 bg-amber-50',
+  current: 'border-slate-300 bg-slate-50',
+  next: 'border-blue-200 bg-blue-50',
+  hero: 'border-slate-400 bg-slate-100',
 };
 
 export function EvolutionPreviewStrip({
@@ -36,7 +36,7 @@ export function EvolutionPreviewStrip({
   return (
     <div
       className={cn(
-        'rounded-2xl bg-gradient-to-r from-amber-50 to-lavender-soft/30 p-4 border border-amber-200/70',
+        'rounded-2xl bg-white p-4 border border-slate-200',
         className,
       )}
     >
@@ -48,7 +48,7 @@ export function EvolutionPreviewStrip({
         {items.map((item, index) => (
           <div key={item.key} className="flex items-center gap-3">
             {index > 0 && (
-              <span className="text-2xl text-lavender-soft select-none" aria-hidden>
+              <span className="text-2xl text-slate-400 select-none" aria-hidden>
                 →
               </span>
             )}

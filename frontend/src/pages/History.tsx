@@ -105,7 +105,7 @@ const History = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lavender-light/40 via-white to-mint-light/40 p-4">
+    <div className="app-page">
       <div className="max-w-4xl mx-auto space-y-4">
         {loggedIn === false && (
           <LoggedOutCTA

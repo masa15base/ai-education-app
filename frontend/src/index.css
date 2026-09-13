@@ -2,44 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design System */
+/* Simple, readable design system (neutral + blue accent) */
 @layer base {
   :root {
-    --background: 250 248 255;
-    --foreground: 42 42 68;
+    --background: 248 250 252;
+    --foreground: 15 23 42;
 
-    --card: 253 253 253;
-    --card-foreground: 42 42 68;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
 
     --popover: 255 255 255;
-    --popover-foreground: 42 42 68;
+    --popover-foreground: 15 23 42;
 
-    --primary: 147 197 253;
-    --primary-foreground: 42 42 68;
+    --primary: 37 99 235;
+    --primary-foreground: 255 255 255;
 
-    --secondary: 249 168 212;
-    --secondary-foreground: 42 42 68;
+    --secondary: 241 245 249;
+    --secondary-foreground: 15 23 42;
 
-    --muted: 246 249 252;
+    --muted: 241 245 249;
     --muted-foreground: 100 116 139;
 
-    --accent: 196 181 253;
-    --accent-foreground: 42 42 68;
+    --accent: 226 232 240;
+    --accent-foreground: 15 23 42;
 
-    --destructive: 239 68 68;
-    --destructive-foreground: 248 250 252;
+    --destructive: 220 38 38;
+    --destructive-foreground: 255 255 255;
 
     --border: 226 232 240;
     --input: 226 232 240;
-    --ring: 147 197 253;
+    --ring: 37 99 235;
 
-    --radius: 1.5rem;
-
-    --lavender-soft: 230 220 250;
-    --mint-soft: 200 245 225;
-    --sky-soft: 200 235 255;
-    --pink-soft: 255 225 235;
-    --navy-dark: 30 30 60;
+    --radius: 1rem;
   }
 }
 
@@ -49,20 +43,23 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-lavender-soft via-mint-soft to-sky-soft text-foreground;
+    @apply bg-slate-50 text-slate-800 antialiased;
     font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
     min-height: 100vh;
   }
 }
 
 @layer components {
-  /* 黒背景＋白文字の共通ボタンスタイル */
+  .app-page {
+    @apply min-h-screen bg-slate-50 p-4 text-slate-800;
+  }
+
   .kid-button {
-    @apply bg-black text-white font-bold py-4 px-8 rounded-full text-xl shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95;
+    @apply bg-slate-800 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-sm transition-colors duration-200 hover:bg-slate-700 active:bg-slate-900;
   }
 
   .quiz-button {
-    @apply bg-black text-white font-bold py-6 px-10 rounded-3xl text-xl shadow-md hover:scale-105 hover:shadow-lg;
+    @apply bg-slate-800 text-white font-bold py-6 px-10 rounded-2xl text-xl shadow-sm hover:bg-slate-700;
   }
 
   .quiz-pop {
@@ -97,11 +94,10 @@
 
   .steps-confetti {
     background-image:
-      radial-gradient(circle, hsl(199 89% 48% / 0.35) 2px, transparent 2px),
-      radial-gradient(circle, hsl(142 71% 45% / 0.35) 2px, transparent 2px),
-      radial-gradient(circle, hsl(45 93% 47% / 0.35) 2px, transparent 2px);
-    background-size: 24px 24px, 32px 32px, 28px 28px;
-    background-position: 0 0, 12px 12px, 6px 18px;
+      radial-gradient(circle, rgb(37 99 235 / 0.15) 2px, transparent 2px),
+      radial-gradient(circle, rgb(100 116 139 / 0.12) 2px, transparent 2px);
+    background-size: 24px 24px, 32px 32px;
+    background-position: 0 0, 12px 12px;
     animation: steps-confetti-fade 4s ease-out forwards;
   }
 
@@ -111,26 +107,34 @@
   }
 
   .chat-bubble {
-    @apply bg-black text-white font-bold py-6 px-8 rounded-full text-xl shadow-md hover:scale-105 hover:shadow-lg transition-all duration-300;
+    @apply bg-slate-800 text-white font-bold py-6 px-8 rounded-2xl text-xl shadow-sm hover:bg-slate-700 transition-colors duration-200;
   }
 
   .kid-card {
-    @apply bg-white backdrop-blur-sm rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300;
+    @apply bg-white rounded-2xl p-6 shadow-sm border border-slate-200;
   }
 
   .character-display {
-    @apply relative bg-gradient-to-br from-sky-soft to-white rounded-full p-8 shadow-inner;
+    @apply relative bg-slate-100 rounded-2xl p-8 border border-slate-200;
   }
 
   .level-badge {
-    @apply absolute -top-2 -right-2 bg-gradient-to-r from-lavender-soft to-purple-soft text-white font-bold px-4 py-2 rounded-full text-lg shadow-md border-2 border-white;
+    @apply absolute -top-2 -right-2 bg-slate-800 text-white font-bold px-4 py-2 rounded-full text-lg shadow-sm border-2 border-white;
   }
 
   .experience-bar {
-    @apply bg-gradient-to-r from-yellow-300 via-orange-300 to-purple-400 h-4 rounded-full transition-all duration-500;
+    @apply bg-blue-600 h-3 rounded-full transition-all duration-500;
   }
 
   .steps-visual {
-    @apply flex items-center justify-center gap-4 p-4 bg-gradient-to-r from-mint-soft to-sky-soft rounded-2xl;
+    @apply flex items-center justify-center gap-4 p-4 bg-slate-100 rounded-xl border border-slate-200;
+  }
+
+  .surface-muted {
+    @apply rounded-xl bg-slate-100 border border-slate-200 p-4 text-slate-700;
+  }
+
+  .surface-accent {
+    @apply rounded-xl bg-blue-50 border border-blue-100 p-4 text-slate-800;
   }
 }

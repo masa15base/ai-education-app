@@ -457,7 +457,7 @@ const Quiz = () => {
 
   if (needsSetup) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-lavender-light via-mint-light to-sky-light p-4">
+      <div className="app-page">
         <div className="flex items-center mb-6">
           <Button
             onClick={() => navigate('/')}
@@ -534,7 +534,7 @@ const Quiz = () => {
     const levelPath = levelHistory.join(' → ');
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-lavender-light via-mint-light to-sky-light p-4 flex items-center justify-center">
+      <div className="app-page flex items-center justify-center">
         <Card
           className={cn(
             'kid-card w-full text-center',
@@ -553,7 +553,7 @@ const Quiz = () => {
             {subjectJa(subject)} · レベル {level}
           </p>
           <p className="text-sm text-navy-dark mb-2">レベル履歴: {levelPath}</p>
-          <p className="text-sm font-bold text-orange-600 mb-4">
+          <p className="text-sm font-bold text-slate-600 mb-4">
             連続正解ベスト {bestStreak} 問
           </p>
 
@@ -562,7 +562,7 @@ const Quiz = () => {
           )}
 
           {!practiceMode && (
-            <div className="bg-gradient-to-r from-mint-light to-sky-light rounded-2xl p-4 mb-4">
+            <div className="surface-accent mb-4">
               <Star className="h-8 w-8 text-lavender-soft mx-auto mb-2" />
               <p className="font-bold text-navy-dark">
                 経験値 +{resultSummary?.gained ?? '—'} ゲット！
@@ -593,7 +593,8 @@ const Quiz = () => {
               </ul>
               <Button
                 onClick={handleRetryWrongs}
-                className="w-full mt-3 bg-yellow-200 text-navy-dark hover:bg-yellow-300"
+                className="w-full mt-3"
+                variant="outline"
               >
                 まちがいだけもう一度
               </Button>
@@ -606,7 +607,8 @@ const Quiz = () => {
                 <Button
                   onClick={handlePrevLevel}
                   disabled={level <= 1}
-                  className="w-1/3 bg-blue-200 text-navy-dark hover:bg-blue-300 text-xs sm:text-sm"
+                  className="w-1/3 text-xs sm:text-sm"
+                  variant="outline"
                 >
                   前のレベル
                 </Button>
@@ -617,14 +619,16 @@ const Quiz = () => {
                     navigate(`/quiz?subject=${subject}&level=${level}`);
                     toast({ title: `レベル ${level} を再チャレンジ！` });
                   }}
-                  className="w-1/3 bg-yellow-200 text-navy-dark hover:bg-yellow-300 text-xs sm:text-sm"
+                  className="w-1/3 text-xs sm:text-sm"
+                  variant="outline"
                 >
                   同じレベル
                 </Button>
                 <Button
                   onClick={handleNextLevel}
                   disabled={score < questions.length || level >= MAX_LEVEL}
-                  className="w-1/3 bg-blue-200 text-navy-dark hover:bg-blue-300 text-xs sm:text-sm"
+                  className="w-1/3 text-xs sm:text-sm"
+                  variant="outline"
                 >
                   次のレベル
                 </Button>
@@ -639,7 +643,8 @@ const Quiz = () => {
 
             <Button
               onClick={() => navigate('/')}
-              className="w-full bg-green-200 text-navy-dark hover:bg-green-300"
+              className="w-full"
+              variant="outline"
             >
               ホームに戻る
             </Button>
@@ -662,7 +667,7 @@ const Quiz = () => {
   const q = questions[currentQuestion];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lavender-light via-mint-light to-sky-light p-4">
+    <div className="app-page">
       <div className="flex items-center justify-between mb-4 gap-2">
         <Button
           onClick={() => navigate('/')}
@@ -688,7 +693,7 @@ const Quiz = () => {
         )}
       </div>
       <div className="mb-6">
-        <Progress value={progress} className="h-3 bg-lavender-light/50" />
+        <Progress value={progress} className="h-3 bg-slate-200" />
       </div>
 
       <Card

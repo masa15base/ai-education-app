@@ -202,7 +202,7 @@ export function StepsPanel({
 
       <div className="text-4xl mb-2">👟</div>
       <h3 className="text-2xl font-bold text-navy-dark mb-1">今日の歩数</h3>
-      <p className="text-sm text-lavender-soft font-bold mb-3">{encouragement}</p>
+      <p className="text-sm text-slate-600 font-bold mb-3">{encouragement}</p>
 
       {!loggedIn ? (
         <div className="space-y-3 mb-4">
@@ -235,7 +235,7 @@ export function StepsPanel({
             <span>{pct}%</span>
             <span>あと {stepsToGoal.toLocaleString()} 歩</span>
           </div>
-          <Progress value={pct} className="h-4 bg-mint-soft/50 mb-1" />
+          <Progress value={pct} className="h-4 bg-slate-200 mb-1" />
           <div className="flex justify-between text-[10px] text-gray-400 px-0.5">
             <span>0</span>
             <span>25%</span>
@@ -247,11 +247,11 @@ export function StepsPanel({
       ) : (
         <div
           className={cn(
-            'bg-gradient-to-r from-mint-soft to-sky-soft rounded-2xl p-5 mb-4',
+            'surface-accent mb-4',
             celebrate && 'steps-celebrate-pop',
           )}
         >
-          <Trophy className="h-10 w-10 mx-auto text-yellow-600 mb-2" />
+          <Trophy className="h-10 w-10 mx-auto text-blue-600 mb-2" />
           <p className="text-2xl font-bold text-navy-dark">目標達成！</p>
           <p className="text-base text-gray-700 mt-1">
             {displayName}が喜んでるよ！
