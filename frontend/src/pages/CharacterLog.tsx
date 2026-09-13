@@ -123,7 +123,7 @@ const CharacterLog = () => {
   const showXpToNext = growthStatus?.exp_to_next ?? xpToNext;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-kid-pink/30 via-kid-blue/20 to-kid-yellow/20 p-4">
+    <div className="app-page">
       <div className="flex items-center mb-6">
         <Button
           onClick={() => navigate('/')}

@@ -339,9 +339,9 @@ const Index = () => {
   const displayName = character.displayName || DEFAULT_CHARACTER.displayName;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lavender-soft via-mint-soft to-sky-soft p-4">
+    <div className="app-page">
       <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-lavender-soft to-sky-soft bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold text-slate-800">
           まなとも
         </h1>
         <div className="flex flex-col items-end gap-1">
@@ -431,7 +431,7 @@ const Index = () => {
                 characterVisualTier(characterLevel) === 2 &&
                   'scale-100 drop-shadow-md',
                 characterVisualTier(characterLevel) === 3 &&
-                  'scale-105 drop-shadow-lg ring-4 ring-amber-200/70 rounded-3xl p-1',
+                  'scale-105 drop-shadow-lg ring-4 ring-blue-200 rounded-3xl p-1',
               )}
             >
               {character.imageUrl && !imgBroken ? (
@@ -545,7 +545,7 @@ const Index = () => {
           )}
 
           {growthStatus && (
-            <div className="mb-4 rounded-2xl bg-gradient-to-r from-mint-soft/40 to-lavender-soft/40 p-3 text-sm text-navy-dark">
+            <div className="mb-4 surface-muted text-sm">
               <p className="font-bold mb-1">きょうの成長メモ</p>
               <p>
                 クイズ {growthStatus.quiz_today ? '挑戦済み ✓' : 'まだ'}
@@ -618,7 +618,7 @@ const Index = () => {
             )}
           </div>
           {hasQuizToday && todayQuizSnap && (
-            <div className="bg-gradient-to-r from-lavender-soft/40 to-mint-soft/40 rounded-2xl p-3 mb-4 text-sm text-navy-dark">
+            <div className="surface-muted mb-4 text-sm">
               <p className="font-semibold">きょうの直近クイズ</p>
               <p>
                 {todayQuizSnap.subject === 'english' ? '英語' : '算数'} L

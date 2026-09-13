@@ -185,7 +185,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lavender-light via-mint-light to-sky-light p-4 flex flex-col">
+    <div className="app-page flex flex-col">
       <div className="flex items-center mb-4">
         <Button
           onClick={() => navigate('/')}
@@ -281,7 +281,7 @@ const Chat = () => {
               type="button"
               onClick={() => void handleSendMessage()}
               disabled={!inputMessage.trim() || sending}
-              className="bg-gradient-to-r from-pink-soft to-purple-soft text-white px-6 py-3 rounded-2xl hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+              className="bg-slate-800 text-white px-6 py-3 rounded-xl hover:bg-slate-700 transition-colors disabled:opacity-50"
             >
               <Send className="h-5 w-5" />
             </Button>

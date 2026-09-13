@@ -44,7 +44,7 @@ export function QuizEvolutionCelebration({ data, className }: Props) {
   return (
     <div
       className={cn(
-        'mb-4 rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-white to-mint-light/40 p-4 text-left shadow-md',
+        'mb-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-left shadow-sm',
         className,
       )}
       role="status"
@@ -55,9 +55,9 @@ export function QuizEvolutionCelebration({ data, className }: Props) {
           ✨
         </p>
         <h3 className="text-xl font-bold text-navy-dark">進化したよ！</h3>
-        <p className="text-sm font-semibold text-amber-800 mt-1">
+        <p className="text-sm font-semibold text-slate-700 mt-1">
           {prevEmoji} {prevLabel}
-          <span className="mx-2 text-lavender-soft" aria-hidden>
+          <span className="mx-2 text-slate-400" aria-hidden>
             →
           </span>
           {newEmoji} {newLabel}
@@ -65,12 +65,12 @@ export function QuizEvolutionCelebration({ data, className }: Props) {
       </div>
 
       {data.imageUrl && (
-        <div className="mb-4 rounded-xl bg-white/90 border border-mint-soft/50 p-3 text-center">
+        <div className="mb-4 rounded-xl bg-white border border-slate-200 p-3 text-center">
           <p className="text-xs font-bold text-navy-dark mb-2">新しい姿</p>
           <img
             src={data.imageUrl}
             alt={`${newLabel}になったキャラ`}
-            className="max-h-40 mx-auto rounded-xl border-2 border-sky-soft/40 shadow-sm"
+            className="max-h-40 mx-auto rounded-xl border border-slate-200 shadow-sm"
             style={{ imageRendering: 'pixelated' }}
           />
         </div>

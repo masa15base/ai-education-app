@@ -50,9 +50,9 @@ export function GrowthStageRoadmap({
                   className={cn(
                     "text-2xl sm:text-3xl rounded-full w-12 h-12 flex items-center justify-center border-2",
                     reached
-                      ? "bg-mint-soft/40 border-mint-soft"
+                      ? "bg-slate-100 border-slate-300"
                       : "bg-gray-100 border-gray-200 opacity-50",
-                    current && "ring-2 ring-lavender-soft border-lavender-soft",
+                    current && "ring-2 ring-blue-500 border-blue-500",
                   )}
                   aria-hidden
                 >
@@ -61,20 +61,20 @@ export function GrowthStageRoadmap({
                 <span
                   className={cn(
                     "text-[10px] sm:text-xs mt-1 font-bold truncate w-full",
-                    current ? "text-lavender-soft" : reached ? "text-navy-dark" : "text-gray-400",
+                    current ? "text-blue-600" : reached ? "text-navy-dark" : "text-gray-400",
                   )}
                 >
                   {STAGE_LABEL_JA[id as GrowthStageId]}
                 </span>
                 {current && (
-                  <span className="text-[10px] text-lavender-soft font-bold">いま</span>
+                  <span className="text-[10px] text-blue-600 font-bold">いま</span>
                 )}
               </div>
               {i < GROWTH_STAGES.length - 1 && (
                 <div
                   className={cn(
                     "h-1 w-3 sm:w-5 rounded-full shrink-0",
-                    i < idx ? "bg-mint-soft" : "bg-gray-200",
+                    i < idx ? "bg-blue-500" : "bg-gray-200",
                   )}
                 />
               )}
@@ -83,7 +83,7 @@ export function GrowthStageRoadmap({
         })}
       </div>
       {nextEvolution?.complete ? (
-        <p className="text-center text-sm font-bold text-amber-700 mt-3">
+        <p className="text-center text-sm font-bold text-slate-700 mt-3">
           ヒーローまで進化したよ！すごい！
         </p>
       ) : nextEvolution?.next_stage ? (
@@ -111,13 +111,13 @@ export function EvolutionProgressCard({
     return (
       <div
         className={cn(
-          "rounded-2xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 p-4 text-center",
+          "rounded-2xl bg-slate-100 border border-slate-200 p-4 text-center",
           className,
         )}
       >
         <p className="text-3xl mb-2">🏆</p>
-        <p className="font-bold text-amber-800">最高ステージ到達！</p>
-        <p className="text-sm text-amber-900/80 mt-1">
+        <p className="font-bold text-slate-800">最高ステージ到達！</p>
+        <p className="text-sm text-slate-600 mt-1">
           クイズや歩数で、さらに強くなれるよ
         </p>
       </div>
@@ -131,13 +131,13 @@ export function EvolutionProgressCard({
   return (
     <div
       className={cn(
-        "rounded-2xl bg-sky-soft/25 border border-sky-soft/40 p-4 text-left text-navy-dark",
+        "rounded-2xl surface-accent text-left",
         className,
       )}
     >
       <p className="font-bold mb-1">次の進化まで</p>
       <p className="text-sm mb-3">
-        目標: <span className="font-bold text-sky-700">{nextName}</span>
+        目標: <span className="font-bold text-blue-700">{nextName}</span>
       </p>
       <ul className="space-y-3">
         {reqs.map((req) => {
@@ -150,7 +150,7 @@ export function EvolutionProgressCard({
                   {req.done ? "✓ " : ""}
                   {req.label}
                 </span>
-                <span className={req.done ? "text-green-700" : "text-orange-700"}>
+                <span className={req.done ? "text-green-700" : "text-slate-600"}>
                   {formatRequirementValue(req)}
                 </span>
               </div>

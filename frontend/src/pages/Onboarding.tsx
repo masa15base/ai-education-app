@@ -92,14 +92,14 @@ const Onboarding = () => {
 
   if (!authReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lavender-light via-mint-light to-sky-light">
+      <div className="app-page flex items-center justify-center">
         <p className="text-navy-dark font-bold">じゅんび中…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lavender-light via-mint-light to-sky-light p-4">
+    <div className="app-page">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Button
