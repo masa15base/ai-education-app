@@ -70,6 +70,12 @@ export function stageIndex(stage: string | null | undefined): number {
   return i >= 0 ? i : 0;
 }
 
+export function nextStageAfter(stage: string | null | undefined): GrowthStageId | null {
+  const i = stageIndex(stage);
+  if (i >= GROWTH_STAGES.length - 1) return null;
+  return GROWTH_STAGES[i + 1];
+}
+
 /** API の next_evolution から要件リストを組み立て（旧フィールド互換） */
 export function evolutionRequirements(
   next: NextEvolutionInfo | null | undefined,

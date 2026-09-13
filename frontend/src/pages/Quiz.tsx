@@ -6,9 +6,14 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Check, Lightbulb, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import {
+  QuizEvolutionCelebration,
+  type QuizEvolutionCelebrationData,
+} from '@/components/QuizEvolutionCelebration';
 import { postQuizComplete } from '@/lib/api';
 import { getApiBase } from '@/lib/apiBase';
 import { fetchCharacterFromServer, loadCharacter, patchCharacter } from '@/lib/characterState';
+import { STAGE_EMOJI, stageLabel } from '@/lib/growthDisplay';
 import { ENGLISH_VOCAB, englishFourOptions, englishVocabRowIndex } from '@/lib/englishQuizDynamic';
 import { ensureMathFourOptions, mathQuestionParts } from '@/lib/mathQuizDynamic';
 import { subjectJa } from '@/lib/subjectJa';
@@ -70,6 +75,8 @@ const Quiz = () => {
     gained: number;
     streakDays?: number;
   } | null>(null);
+  const [evolutionCelebration, setEvolutionCelebration] =
+    useState<QuizEvolutionCelebrationData | null>(null);
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -154,6 +161,7 @@ const Quiz = () => {
     setWrongReviews([]);
     setFeedbackAnim(null);
     setResultSummary(null);
+    setEvolutionCelebration(null);
   };
 
   useEffect(() => {
@@ -262,21 +270,36 @@ const Quiz = () => {
         const gained = progressXp > 0 ? progressXp : growthXp;
         setResultSummary({ pct, gained });
 
+        const growth = res.growth;
+        const didEvolve = Boolean(growth?.evolved && growth.stage);
+        if (didEvolve && growth?.stage) {
+          setEvolutionCelebration({
+            previousStage: growth.previous_stage ?? 'baby',
+            newStage: growth.stage,
+            imageUrl: growth.image_url ?? null,
+            nextPreviewUrl: growth.next_stage_preview_url ?? null,
+            heroPreviewUrl: growth.hero_preview_url ?? null,
+          });
+        }
+
         if (res.saved) {
           await fetchCharacterFromServer();
-          if (res.growth?.evolved && res.growth.image_url) {
+          if (didEvolve && growth?.stage) {
             patchCharacter({
-              imageUrl: res.growth.image_url,
-              heroPreviewUrl: res.growth.hero_preview_url ?? loadCharacter().heroPreviewUrl,
+              imageUrl: growth.image_url ?? loadCharacter().imageUrl,
+              heroPreviewUrl:
+                growth.hero_preview_url ?? loadCharacter().heroPreviewUrl,
               nextEvolutionPreviewUrl:
-                res.growth.next_stage_preview_url ??
+                growth.next_stage_preview_url ??
                 loadCharacter().nextEvolutionPreviewUrl,
+              experience:
+                typeof res.experience === 'number' ? res.experience : undefined,
             });
           }
-          if (res.growth?.evolved) {
+          if (didEvolve && growth?.stage) {
             toast({
-              title: '進化したよ！',
-              description: 'キャラの姿が変わったよ。ホームで確認してね',
+              title: `進化したよ！${stageLabel(growth.stage)}になった！`,
+              description: `${STAGE_EMOJI[growth.stage] ?? '✨'} クイズの成果で新しい姿に`,
               duration: 4500,
             });
           } else if (gained > 0) {
@@ -512,7 +535,12 @@ const Quiz = () => {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-lavender-light via-mint-light to-sky-light p-4 flex items-center justify-center">
-        <Card className="kid-card max-w-md w-full text-center">
+        <Card
+          className={cn(
+            'kid-card w-full text-center',
+            evolutionCelebration ? 'max-w-lg' : 'max-w-md',
+          )}
+        >
           <div className="text-6xl mb-4 quiz-pop">🎉</div>
           <h2 className="text-2xl font-bold text-navy-dark mb-2">
             {practiceMode ? '練習完了！' : 'クイズ完了！'}
@@ -528,6 +556,10 @@ const Quiz = () => {
           <p className="text-sm font-bold text-orange-600 mb-4">
             連続正解ベスト {bestStreak} 問
           </p>
+
+          {!practiceMode && evolutionCelebration && (
+            <QuizEvolutionCelebration data={evolutionCelebration} />
+          )}
 
           {!practiceMode && (
             <div className="bg-gradient-to-r from-mint-light to-sky-light rounded-2xl p-4 mb-4">
