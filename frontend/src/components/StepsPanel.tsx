@@ -15,6 +15,13 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
+  fetchFitnessConnectUrl,
+  fetchFitnessStatus,
+  syncFitnessSteps,
+  disconnectFitness,
+  type FitnessStatus,
+} from '@/lib/fitnessApi';
+import {
   fetchStepsWeek,
   putStepsToday,
   type StepsWeekDay,
@@ -116,6 +123,8 @@ export function StepsPanel({
   const [weekLoading, setWeekLoading] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [fitnessStatus, setFitnessStatus] = useState<FitnessStatus | null>(null);
+  const [fitnessBusy, setFitnessBusy] = useState(false);
   const prevStepsRef = useRef(todaySteps);
   const prevGoalReachedRef = useRef(todaySteps >= stepsGoal);
 
@@ -146,6 +155,28 @@ export function StepsPanel({
   }, [refreshKey, loggedIn]);
 
   useEffect(() => {
+    if (!loggedIn) {
+      setFitnessStatus(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const user = getAuth().currentUser;
+        if (!user) return;
+        const token = await user.getIdToken();
+        const status = await fetchFitnessStatus(token);
+        if (!cancelled) setFitnessStatus(status);
+      } catch {
+        if (!cancelled) setFitnessStatus(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loggedIn, refreshKey]);
+
+  useEffect(() => {
     const ymd = todayYmd ?? jstYmd();
     const prev = prevStepsRef.current;
     if (todaySteps !== prev) {
@@ -174,6 +205,76 @@ export function StepsPanel({
       prevGoalReachedRef.current = false;
     }
   }, [todaySteps, stepsGoal, isGoalReached, displayName, todayYmd]);
+
+  const connectGoogleFit = async () => {
+    const user = getAuth().currentUser;
+    if (!user || fitnessBusy) return;
+    setFitnessBusy(true);
+    try {
+      const token = await user.getIdToken();
+      const url = await fetchFitnessConnectUrl(token);
+      window.location.href = url;
+    } catch (err) {
+      toast({
+        title: 'Google Fit 連携を開始できませんでした',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+      setFitnessBusy(false);
+    }
+  };
+
+  const runFitnessSync = async (opts?: { silent?: boolean }) => {
+    const user = getAuth().currentUser;
+    if (!user || fitnessBusy) return;
+    setFitnessBusy(true);
+    try {
+      const token = await user.getIdToken();
+      const result = await syncFitnessSteps(token);
+      onStepsUpdated(result.today_steps);
+      const status = await fetchFitnessStatus(token);
+      setFitnessStatus(status);
+      if (!opts?.silent) {
+        toast({
+          title: '歩数を取り込みました',
+          description:
+            result.delta_applied > 0
+              ? `+${result.delta_applied.toLocaleString()} 歩を反映（今日 ${result.today_steps.toLocaleString()} 歩）`
+              : `今日 ${result.today_steps.toLocaleString()} 歩（変更なし）`,
+        });
+      }
+    } catch (err) {
+      if (!opts?.silent) {
+        toast({
+          title: '歩数の自動取り込みに失敗',
+          description: err instanceof Error ? err.message : String(err),
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setFitnessBusy(false);
+    }
+  };
+
+  const handleDisconnectFitness = async () => {
+    const user = getAuth().currentUser;
+    if (!user || fitnessBusy) return;
+    setFitnessBusy(true);
+    try {
+      const token = await user.getIdToken();
+      await disconnectFitness(token);
+      setFitnessStatus((s) => (s ? { ...s, connected: false, last_sync_at: null } : s));
+      toast({ title: 'Google Fit 連携を解除しました' });
+    } catch (err) {
+      toast({
+        title: '連携解除に失敗',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+    } finally {
+      setFitnessBusy(false);
+    }
+  };
 
   const adjustSteps = async (delta: number) => {
     const user = getAuth().currentUser;
@@ -259,6 +360,64 @@ export function StepsPanel({
         </div>
       )}
 
+      {loggedIn && fitnessStatus?.configured && (
+        <div className="surface-muted text-left mb-4">
+          <p className="text-sm font-bold text-navy-dark mb-2">自動取り込み（Google Fit）</p>
+          {fitnessStatus.connected ? (
+            <>
+              <p className="text-xs text-gray-600 mb-2">
+                連携済み
+                {fitnessStatus.last_sync_at
+                  ? ` · 最終同期 ${new Date(fitnessStatus.last_sync_at).toLocaleString('ja-JP')}`
+                  : ''}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-full text-xs"
+                  disabled={fitnessBusy}
+                  onClick={() => void runFitnessSync()}
+                >
+                  今すぐ同期
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full text-xs"
+                  disabled={fitnessBusy}
+                  onClick={() => void handleDisconnectFitness()}
+                >
+                  連携解除
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-gray-600 mb-2">
+                Android + Google Fit なら、歩数が自動でサーバーに反映されます。
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                className="rounded-full text-xs"
+                disabled={fitnessBusy}
+                onClick={() => void connectGoogleFit()}
+              >
+                Google Fit と連携
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
+      {loggedIn && fitnessStatus && !fitnessStatus.configured && (
+        <p className="text-[11px] text-gray-500 mb-4">
+          自動取り込みは管理者が Google Fit OAuth を設定すると有効になります。
+        </p>
+      )}
+
       {loggedIn && (
         <>
           <div className="flex flex-wrap justify-center gap-2 mb-5">
@@ -294,7 +453,7 @@ export function StepsPanel({
             </Button>
           </div>
           <p className="text-[11px] text-gray-400 mb-4">
-            デモ用ボタン（HealthKit 連携は今後対応）
+            デモ用ボタン（手動で歩数を増やすテスト）
           </p>
         </>
       )}

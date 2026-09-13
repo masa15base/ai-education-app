@@ -40,7 +40,7 @@ def steps_today(uid: str | None = Depends(get_optional_uid)):
 def steps_today_put(body: StepsPutIn, uid: str = Depends(get_current_uid)):
     day = app_ymd()
     prev, _ = get_steps_today(uid, day)
-    n, src = set_steps_today(uid, body.steps, day)
+    n, src = set_steps_today(uid, body.steps, day, source="manual")
     delta = max(0, int(n) - int(prev or 0))
     if delta > 0 or n > 0:
         record_activity(

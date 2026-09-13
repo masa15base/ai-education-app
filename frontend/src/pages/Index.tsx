@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { fetchQuizSessionToday } from '@/lib/cloudQuizApi';
 import { postSyncStepsXp } from '@/lib/api';
 import { fetchStepsToday } from '@/lib/stepsApi';
+import { autoSyncFitnessStepsIfNeeded } from '@/lib/stepsAutoSync';
 import { StepsPanel } from '@/components/StepsPanel';
 import {
   fetchCharacterGrowthStatus,
@@ -139,6 +140,26 @@ const Index = () => {
   }, [pullSettled, navigate, authHint]);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const fitness = params.get('fitness');
+    if (!fitness) return;
+    if (fitness === 'connected') {
+      toast({
+        title: 'Google Fit と連携しました',
+        description: '歩数を取り込みます…',
+      });
+      void syncStepsFromServerIfAuthed();
+    } else if (fitness !== 'ok') {
+      toast({
+        title: 'Google Fit 連携に失敗しました',
+        description: fitness,
+        variant: 'destructive',
+      });
+    }
+    navigate(location.pathname, { replace: true });
+  }, [location.search, location.pathname, navigate, syncStepsFromServerIfAuthed]);
+
+  useEffect(() => {
     const st = location.state as { characterUpdated?: boolean; displayName?: string } | null;
     if (!st?.characterUpdated) return;
     void (async () => {
@@ -159,6 +180,7 @@ const Index = () => {
     const u = getAuth().currentUser;
     if (!u) return;
     try {
+      const auto = await autoSyncFitnessStepsIfNeeded();
       const token = await u.getIdToken();
       const snap = await fetchStepsToday(token);
       if (snap.authenticated && typeof snap.steps === 'number') {
@@ -171,6 +193,13 @@ const Index = () => {
           setStepsGoal(snap.goal_steps);
         }
         setUiTick((x) => x + 1);
+      }
+      if (auto.synced && (auto.delta ?? 0) > 0) {
+        toast({
+          title: '歩数を自動取り込みしました',
+          description: `Google Fit から +${(auto.delta ?? 0).toLocaleString()} 歩`,
+          duration: 3500,
+        });
       }
     } catch {
       /* 同期失敗はホーム表示を阻害しない */

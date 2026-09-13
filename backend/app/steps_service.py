@@ -21,6 +21,7 @@ _day_keys_utc = _day_keys
 
 
 _memory: dict[str, int] = {}
+_memory_source: dict[str, str] = {}
 
 
 def _key(uid: str, ymd: str) -> str:
@@ -28,10 +29,11 @@ def _key(uid: str, ymd: str) -> str:
 
 
 def get_steps_today(uid: str, ymd: str | None = None) -> tuple[int, str]:
-    """戻り値: (steps, source) source は database | memory"""
+    """戻り値: (steps, source) source は database | memory | manual | google_fit 等"""
     day = ymd or _ymd_today()
     if dbmod.SessionLocal is None:
-        return _memory.get(_key(uid, day), 0), "memory"
+        k = _key(uid, day)
+        return _memory.get(k, 0), _memory_source.get(k, "memory")
 
     db = dbmod.SessionLocal()
     try:
@@ -42,18 +44,27 @@ def get_steps_today(uid: str, ymd: str | None = None) -> tuple[int, str]:
         )
         if row is None:
             return 0, "database"
-        return int(row.steps or 0), "database"
+        src = getattr(row, "source", None) or "database"
+        return int(row.steps or 0), str(src)
     finally:
         db.close()
 
 
-def set_steps_today(uid: str, steps: int, ymd: str | None = None) -> tuple[int, str]:
+def set_steps_today(
+    uid: str,
+    steps: int,
+    ymd: str | None = None,
+    *,
+    source: str = "manual",
+) -> tuple[int, str]:
     day = ymd or _ymd_today()
     steps = max(0, min(999_999, int(steps)))
 
     if dbmod.SessionLocal is None:
-        _memory[_key(uid, day)] = steps
-        return steps, "memory"
+        k = _key(uid, day)
+        _memory[k] = steps
+        _memory_source[k] = source
+        return steps, source
 
     db = dbmod.SessionLocal()
     try:
@@ -63,15 +74,37 @@ def set_steps_today(uid: str, steps: int, ymd: str | None = None) -> tuple[int, 
             .first()
         )
         if row is None:
-            row = DailyStep(user_id=uid, step_date=day, steps=steps)
+            row = DailyStep(user_id=uid, step_date=day, steps=steps, source=source)
             db.add(row)
         else:
             row.steps = steps
+            row.source = source
         db.commit()
         db.refresh(row)
-        return int(row.steps), "database"
+        return int(row.steps), str(row.source or source)
     finally:
         db.close()
+
+
+def merge_steps_for_day(
+    uid: str,
+    steps: int,
+    ymd: str | None = None,
+    *,
+    source: str = "google_fit",
+) -> tuple[int, int]:
+    """
+    自動取り込み用: 既存値より大きい場合のみ更新。
+    戻り値: (merged_steps, delta_applied)
+    """
+    day = ymd or _ymd_today()
+    incoming = max(0, min(999_999, int(steps)))
+    prev, _ = get_steps_today(uid, day)
+    merged = max(int(prev), incoming)
+    delta = max(0, merged - int(prev))
+    if merged != prev:
+        set_steps_today(uid, merged, day, source=source)
+    return merged, delta
 
 
 def list_steps_week(

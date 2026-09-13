@@ -100,6 +100,20 @@ class DailyStep(Base):
     user_id = Column(String(128), nullable=False, index=True)
     step_date = Column(String(10), nullable=False)  # YYYY-MM-DD（サーバー日付基準）
     steps = Column(Integer, nullable=False, default=0)
+    source = Column(String(32), nullable=False, default="manual")
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class UserFitnessConnection(Base):
+    """Google Fit 等の OAuth 連携（1ユーザー1行）。"""
+
+    __tablename__ = "user_fitness_connections"
+
+    user_id = Column(String(128), primary_key=True)
+    provider = Column(String(32), nullable=False, default="google_fit")
+    refresh_token = Column(Text, nullable=False)
+    last_sync_at = Column(DateTime, nullable=True)
+    connected_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
