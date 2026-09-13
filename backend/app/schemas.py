@@ -175,6 +175,33 @@ class StepsWeekOut(BaseModel):
     days: List[StepsWeekDayOut] = []
 
 
+class FitnessStatusOut(BaseModel):
+    configured: bool
+    connected: bool
+    provider: Optional[str] = None
+    last_sync_at: Optional[str] = None
+    hint: Optional[str] = None
+
+
+class FitnessConnectUrlOut(BaseModel):
+    url: str
+
+
+class FitnessSyncDayOut(BaseModel):
+    date: str
+    steps: int
+    imported: int
+
+
+class FitnessSyncOut(BaseModel):
+    provider: str
+    today_ymd: str
+    today_steps: int
+    imported_today: int
+    delta_applied: int
+    synced_days: List[FitnessSyncDayOut] = []
+
+
 class CharacterNextEvolution(BaseModel):
     next_stage: Optional[str] = None
     current_stage: Optional[str] = None

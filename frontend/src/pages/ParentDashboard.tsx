@@ -268,7 +268,7 @@ const ParentDashboard = () => {
                   </>
                 )}
                 <p className="text-xs text-purple-600 mt-2">
-                  HealthKit / Health Connect の自動取り込みは今後対応予定
+                  Google Fit 連携で自動取り込み（Android 推奨）· iOS HealthKit は今後対応
                 </p>
               </div>
               <Activity className="h-8 w-8 text-purple-500 shrink-0 ml-2" />

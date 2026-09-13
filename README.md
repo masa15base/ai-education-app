@@ -68,7 +68,21 @@ python backend/scripts/run_jawsdb_sql.py backend/scripts/heroku_add_evolution_vi
 | `PUT` | `/api/steps/today` | **必須** | JSON `{ "steps": number }` で当日を上書き（手入力・ホームのデモ同期用）。 |
 | `GET` | `/api/steps/week` | **任意** | 直近 7 日分の歩数・目標達成日など（ホーム / 保護者ダッシュボード用）。 |
 
-**将来**: HealthKit / Health Connect などはブラウザから直接取れないため、**ネイティブ連携 or 別バッチ**がこの API に `PUT` / サーバー側ジョブで流し込む想定。現状は「子どもホームのデモボタン」と同じ値をクラウドに残す用途。
+**Google Fit 自動取り込み（Web）**: ホームの「Google Fit と連携」から OAuth 連携し、`POST /api/fitness/sync` で JST 暦日の歩数を取り込み（既存値より大きい場合のみ反映）。ホーム表示時・タブ復帰時に 15 分間隔で自動同期。
+
+**将来**: iOS HealthKit / Android Health Connect のネイティブ連携は別途（Capacitor 等）。HealthKit はブラウザから直接読めない。
+
+Heroku 環境変数（Google Fit 用）:
+
+| 変数 | 用途 |
+|------|------|
+| `GOOGLE_FIT_CLIENT_ID` | Google Cloud OAuth クライアント ID |
+| `GOOGLE_FIT_CLIENT_SECRET` | クライアントシークレット |
+| `GOOGLE_FIT_REDIRECT_URI` | 例: `https://<backend>/api/fitness/oauth/callback` |
+| `FITNESS_OAUTH_STATE_SECRET` | OAuth state 署名（任意・未設定時は CLIENT_SECRET を使用） |
+| `FRONTEND_URL` | 連携完了後のリダイレクト先（Firebase Hosting URL） |
+
+DB マイグレーション: `backend/scripts/heroku_add_fitness_connections.sql`
 
 ---
 

@@ -32,6 +32,7 @@ from .routes import (
     stats,
     steps as steps_routes,
 )
+from .routes import fitness as fitness_routes
 
 
 def _cors_origins() -> list[str]:
@@ -124,6 +125,7 @@ app.include_router(image_preprocess.router, prefix="/api", tags=["image"])
 app.include_router(generate_character.router, prefix="/api", tags=["character"])
 app.include_router(stats.router, prefix="/api/stats", tags=["stats"])
 app.include_router(steps_routes.router, prefix="/api/steps", tags=["steps"])
+app.include_router(fitness_routes.router, prefix="/api/fitness", tags=["fitness"])
 app.include_router(question_bank_routes.router, prefix="/api", tags=["questions"])
 
 _static_root = os.path.join(os.path.dirname(__file__), "..", "static")
