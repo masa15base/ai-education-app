@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { fetchQuizSessionToday } from '@/lib/cloudQuizApi';
 import { postSyncStepsXp } from '@/lib/api';
 import { fetchStepsToday } from '@/lib/stepsApi';
-import { autoSyncFitnessStepsIfNeeded } from '@/lib/stepsAutoSync';
+import { autoSyncStepsIfNeeded } from '@/lib/stepsAutoSync';
 import { StepsPanel } from '@/components/StepsPanel';
 import {
   fetchCharacterGrowthStatus,
@@ -180,7 +180,7 @@ const Index = () => {
     const u = getAuth().currentUser;
     if (!u) return;
     try {
-      const auto = await autoSyncFitnessStepsIfNeeded();
+      const auto = await autoSyncStepsIfNeeded();
       const token = await u.getIdToken();
       const snap = await fetchStepsToday(token);
       if (snap.authenticated && typeof snap.steps === 'number') {
