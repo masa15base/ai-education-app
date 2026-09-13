@@ -38,9 +38,17 @@
 ```bash
 cd frontend
 npm ci                                    # ← 必須（checkout 直後に忘れがち）
-VITE_API_URL=https://ai-edu-app-backend-fb6ffb49064a.herokuapp.com/api npm run build:mobile
-npm run cap:android                       # Android Studio を開く
+VITE_API_URL=https://ai-edu-app-backend-fb6ffb49064a.herokuapp.com/api npm run build:mobile:android
+npm run cap:android                       # Android Studio を開く（未インストール時は下記参照）
 ```
+
+### よくあるエラー
+
+| 症状 | 原因 | 対処 |
+|------|------|------|
+| `@capacitor/core` が見つからない | `npm ci` 未実行 | `cd frontend && npm ci` |
+| `CocoaPods is not installed` | iOS 同期が走った | **Android のみ**なら `build:mobile:android` を使う（iOS 不要） |
+| `Unable to launch Android Studio` | Android Studio 未インストール | 下記「Android Studio のインストール」を参照 |
 
 `npm run cap:android` が `could not determine executable to run` になる場合も、ほぼ同じ原因（`npm ci` 未実行）です。
 
@@ -52,12 +60,27 @@ npm run cap:android                       # Android Studio を開く
 VITE_API_URL=https://ai-edu-app-backend-fb6ffb49064a.herokuapp.com/api
 ```
 
-### Android
+### Android Studio のインストール（Mac）
+
+1. https://developer.android.com/studio から **Android Studio** をダウンロード・インストール
+2. 初回起動ウィザードで **Android SDK**（API 26 以上）を入れる
+3. ターミナルで `npm run cap:android` が使えるようになる
+
+Android Studio を別の場所に入れた場合:
+
+```bash
+export CAPACITOR_ANDROID_STUDIO_PATH="/Applications/Android Studio.app"
+```
+
+手動で開く場合: Android Studio → **Open** → `frontend/android` フォルダを選択。
+
+### Android ビルド手順
 
 1. Firebase Console で Android アプリ（`app.manatomo.education`）を登録
 2. `google-services.json` を `frontend/android/app/` に配置
-3. Android Studio で `frontend/android` を開く: `npm run cap:android`
-4. 実機またはエミュレータで Run
+3. `npm run build:mobile:android`（Vite ビルド + Android のみ sync）
+4. `npm run cap:android` または Android Studio で `frontend/android` を開く
+5. 実機またはエミュレータで **Run ▶**
 
 Health Connect は Android 14+ に同梱。それ以前は Play Store から「Health Connect by Android」をインストール。
 
