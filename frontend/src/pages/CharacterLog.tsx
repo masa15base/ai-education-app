@@ -250,7 +250,7 @@ const CharacterLog = () => {
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <div className="text-center">
                     <div className="text-sm text-gray-600 mb-1">{entry.dateShort}</div>
-                    <div className="bg-kid-yellow rounded-full px-3 py-1 text-sm font-bold">
+                    <div className="bg-slate-200 rounded-full px-3 py-1 text-sm font-bold">
                       難易度 Lv.{entry.level}
                     </div>
                   </div>

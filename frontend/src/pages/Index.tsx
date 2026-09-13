@@ -481,7 +481,7 @@ const Index = () => {
             <p className="text-center text-sm font-bold text-lavender-soft mt-1">
               {STAGE_EMOJI[growthStage] ?? '🥚'} {growthStageLabel}
               {homeAction === 'celebrating' && (
-                <span className="ml-2 text-amber-600 animate-pulse">うれしい！</span>
+                <span className="ml-2 text-blue-600 animate-pulse">うれしい！</span>
               )}
             </p>
           </div>

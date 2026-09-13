@@ -275,26 +275,26 @@ const ParentDashboard = () => {
             </div>
           </Card>
 
-          <Card className="p-6 bg-yellow-50 border-yellow-200">
+          <Card className="p-6 bg-slate-50 border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-yellow-600 font-medium">キャラレベル</p>
-                <p className="text-2xl font-bold text-yellow-800">
+                <p className="text-sm text-slate-600 font-medium">キャラレベル</p>
+                <p className="text-2xl font-bold text-slate-800">
                   {growthStatus?.level ?? displayChar.level}
                 </p>
-                <p className="text-xs text-yellow-800 mt-1">
+                <p className="text-xs text-slate-600 mt-1">
                   {growthStatus
                     ? `${STAGE_EMOJI[growthStatus.stage] ?? ''} ${growthStatus.stage_label}`
                     : `XP ${displayChar.xp}`}
                 </p>
               </div>
-              <Star className="h-8 w-8 text-yellow-500" />
+              <Star className="h-8 w-8 text-blue-600" />
             </div>
           </Card>
         </div>
 
         {growthStatus && (
-          <Card className="p-6 mb-6 border-indigo-100 bg-indigo-50/40">
+          <Card className="p-6 mb-6 border-slate-200 bg-slate-50">
             <h3 className="text-lg font-bold text-gray-800 mb-2">
               キャラ成長サマリ
             </h3>
