@@ -47,7 +47,7 @@ npm run cap:android                       # Android Studio を開く（未イン
 | 症状 | 原因 | 対処 |
 |------|------|------|
 | `@capacitor/core` が見つからない | `npm ci` 未実行 | `cd frontend && npm ci` |
-| `CocoaPods is not installed` | iOS 同期が走った | **Android のみ**なら `build:mobile:android` を使う（iOS 不要） |
+| `CocoaPods is not installed` | iOS 同期が走った | iOS 開発: `brew install cocoapods` → `npm run setup:ios`。Android のみなら `build:mobile:android` |
 | `Unable to launch Android Studio` | Android Studio 未インストール | 下記「Android Studio のインストール」を参照 |
 
 `npm run cap:android` が `could not determine executable to run` になる場合も、ほぼ同じ原因（`npm ci` 未実行）です。
@@ -86,10 +86,19 @@ Health Connect は Android 14+ に同梱。それ以前は Play Store から「H
 
 ### iOS
 
-1. Firebase Console で iOS アプリを登録
+**詳細手順は [docs/mobile-ios.md](mobile-ios.md) を参照。**
+
+```bash
+brew install cocoapods          # 未インストール時
+npm run setup:ios               # pod install
+VITE_API_URL=... npm run build:mobile:ios
+npm run cap:ios                 # App.xcworkspace を開く
+```
+
+1. Firebase Console で iOS アプリ（`app.manatomo.education`）を登録
 2. `GoogleService-Info.plist` を `frontend/ios/App/App/` に配置
-3. Xcode で **HealthKit** capability を有効化
-4. `npm run cap:ios` で Xcode を開き Run
+3. Apple Developer Portal で **HealthKit** を App ID に追加
+4. **実機**で Run（HealthKit 歩数はシミュレータで制限あり）
 
 ## 歩数同期フロー
 
