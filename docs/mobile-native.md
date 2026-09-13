@@ -32,11 +32,17 @@
 
 ## 初回セットアップ
 
+**ブランチ切り替え後は必ず `npm ci` を実行してください。**  
+未実行だと `@capacitor/core` が見つからず Vite ビルドが失敗します。
+
 ```bash
 cd frontend
-npm ci
-npm run build:mobile   # VITE_API_URL を本番向けに設定してから build 推奨
+npm ci                                    # ← 必須（checkout 直後に忘れがち）
+VITE_API_URL=https://ai-edu-app-backend-fb6ffb49064a.herokuapp.com/api npm run build:mobile
+npm run cap:android                       # Android Studio を開く
 ```
+
+`npm run cap:android` が `could not determine executable to run` になる場合も、ほぼ同じ原因（`npm ci` 未実行）です。
 
 ### 環境変数（モバイルビルド）
 
