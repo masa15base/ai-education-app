@@ -161,6 +161,32 @@ class StepsPutOut(BaseModel):
     source: str
 
 
+class StepsSyncDeviceDayIn(BaseModel):
+    ymd: str = Field(min_length=10, max_length=10)
+    steps: int = Field(ge=0, le=999_999)
+
+
+class StepsSyncDeviceIn(BaseModel):
+    """ネイティブ（Health Connect / HealthKit）からの歩数同期。"""
+
+    source: str = Field(default="health_connect", pattern=r"^(health_connect|healthkit)$")
+    days: List[StepsSyncDeviceDayIn] = Field(min_length=1, max_length=7)
+
+
+class StepsSyncDeviceDayOut(BaseModel):
+    date: str
+    steps: int
+    delta_applied: int
+
+
+class StepsSyncDeviceOut(BaseModel):
+    source: str
+    today_ymd: str
+    today_steps: int
+    delta_applied: int
+    synced_days: List[StepsSyncDeviceDayOut] = []
+
+
 class StepsWeekDayOut(BaseModel):
     date: str
     steps: int = 0

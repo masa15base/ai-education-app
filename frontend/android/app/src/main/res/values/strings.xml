@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">まなとも</string>
+    <string name="title_activity_main">まなとも</string>
+    <string name="package_name">app.manatomo.education</string>
+    <string name="custom_url_scheme">app.manatomo.education</string>
+    <string name="health_connect_privacy_policy_url">https://ai-education-app-9d7ae.web.app/privacy</string>
+</resources>

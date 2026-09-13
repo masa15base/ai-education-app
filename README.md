@@ -67,10 +67,17 @@ python backend/scripts/run_jawsdb_sql.py backend/scripts/heroku_add_evolution_vi
 | `GET` | `/api/steps/today` | **任意**（Bearer なし可） | 未ログイン: `authenticated: false`, `steps: null`。ログイン済: 当日（**日本時間 JST の YYYY-MM-DD**）の歩数。DB 無し時はメモリ。 |
 | `PUT` | `/api/steps/today` | **必須** | JSON `{ "steps": number }` で当日を上書き（手入力・ホームのデモ同期用）。 |
 | `GET` | `/api/steps/week` | **任意** | 直近 7 日分の歩数・目標達成日など（ホーム / 保護者ダッシュボード用）。 |
+| `POST` | `/api/steps/sync-from-device` | **必須** | ネイティブ（Health Connect / HealthKit）からの歩数マージ同期。 |
 
-**Google Fit 自動取り込み（Web）**: ホームの「Google Fit と連携」から OAuth 連携し、`POST /api/fitness/sync` で JST 暦日の歩数を取り込み（既存値より大きい場合のみ反映）。ホーム表示時・タブ復帰時に 15 分間隔で自動同期。
+**歩数自動取り込み（ネイティブ優先）**:
 
-**将来**: iOS HealthKit / Android Health Connect のネイティブ連携は別途（Capacitor 等）。HealthKit はブラウザから直接読めない。
+| クライアント | 方式 | API |
+|-------------|------|-----|
+| **Capacitor アプリ（Android）** | Health Connect（端末内・OAuth 不要） | `POST /api/steps/sync-from-device` |
+| **Capacitor アプリ（iOS）** | HealthKit | 同上（`source: healthkit`） |
+| **Web ブラウザ** | Google Fit OAuth（移行期〜2026 年末） | `POST /api/fitness/sync` |
+
+ネイティブ開発手順は [docs/mobile-native.md](docs/mobile-native.md)。ホーム表示時・タブ復帰時に 15 分間隔で自動同期。Health Connect / HealthKit はブラウザから直接読めません。
 
 Heroku 環境変数（Google Fit 用）:
 
@@ -338,7 +345,8 @@ python scripts/upload_question_bank.py --stats-only
 
 ## 今後のロードマップ（例）
 
-- 歩数: ウェアラブル / OS ヘルス API からの**自動取り込みパイプライン**
+- ネイティブ: Play Store / App Store リリース、Firebase ネイティブアプリ登録、HealthKit capability
+- Web 歩数: Google Fit REST → **Google Health API** への移行（2026 年末まで）
 - チャット: 学習コンテキスト連携・履歴保存・保護者向け要約（プライバシー方針とセット）
 - キャラ進化ビジュアルの本実装（DNA 保存・進化時に `image_url` 自動更新・プレビュー永続化）
 - CI（pytest + Playwright）の自動化

@@ -11,8 +11,11 @@ import {
   GoogleAuthProvider,
   FacebookAuthProvider,
   TwitterAuthProvider,
-  signInWithPopup,
 } from "firebase/auth";
+import {
+  completeRedirectSignIn,
+  signInWithProviderAdaptive,
+} from "@/lib/authNative";
 import {
   firebaseAuthErrorMessage,
   sendAccountVerificationEmail,
@@ -39,6 +42,16 @@ function Login() {
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    void (async () => {
+      const redirect = await completeRedirectSignIn(auth);
+      if (redirect?.user) {
+        setPendingVerificationEmail(null);
+        await afterAuthSuccess();
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const mode = searchParams.get("mode");
@@ -269,49 +282,35 @@ function Login() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
+  const handleSocialLogin = async (
+    provider: GoogleAuthProvider | FacebookAuthProvider | TwitterAuthProvider,
+    label: string,
+  ) => {
     try {
       setBusy(true);
-      await signInWithPopup(auth, provider);
-      setPendingVerificationEmail(null);
-      await afterAuthSuccess();
+      const cred = await signInWithProviderAdaptive(auth, provider);
+      if (cred) {
+        setPendingVerificationEmail(null);
+        await afterAuthSuccess();
+      }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      toast({ title: "Google ログイン失敗", description: msg, variant: "destructive" });
+      toast({ title: `${label} ログイン失敗`, description: msg, variant: "destructive" });
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleGoogleLogin = async () => {
+    await handleSocialLogin(new GoogleAuthProvider(), "Google");
   };
 
   const handleFacebookLogin = async () => {
-    const provider = new FacebookAuthProvider();
-    try {
-      setBusy(true);
-      await signInWithPopup(auth, provider);
-      setPendingVerificationEmail(null);
-      await afterAuthSuccess();
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      toast({ title: "Facebook ログイン失敗", description: msg, variant: "destructive" });
-    } finally {
-      setBusy(false);
-    }
+    await handleSocialLogin(new FacebookAuthProvider(), "Facebook");
   };
 
   const handleTwitterLogin = async () => {
-    const provider = new TwitterAuthProvider();
-    try {
-      setBusy(true);
-      await signInWithPopup(auth, provider);
-      setPendingVerificationEmail(null);
-      await afterAuthSuccess();
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      toast({ title: "X ログイン失敗", description: msg, variant: "destructive" });
-    } finally {
-      setBusy(false);
-    }
+    await handleSocialLogin(new TwitterAuthProvider(), "X");
   };
 
   const handleTestSave = async () => {

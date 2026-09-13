@@ -45,6 +45,34 @@ export async function fetchStepsWeek(
   return JSON.parse(text || '{}') as StepsWeekResponse;
 }
 
+export type StepsSyncDeviceResponse = {
+  source: string;
+  today_ymd: string;
+  today_steps: number;
+  delta_applied: number;
+  synced_days: Array<{ date: string; steps: number; delta_applied: number }>;
+};
+
+export async function syncStepsFromDevice(
+  idToken: string,
+  body: {
+    source: 'health_connect' | 'healthkit';
+    days: Array<{ ymd: string; steps: number }>;
+  },
+): Promise<StepsSyncDeviceResponse> {
+  const res = await fetch(`${getApiBase()}/steps/sync-from-device`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`${res.status} ${text.slice(0, 200)}`);
+  return JSON.parse(text || '{}') as StepsSyncDeviceResponse;
+}
+
 export async function putStepsToday(
   idToken: string,
   steps: number,

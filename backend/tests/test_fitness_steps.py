@@ -56,6 +56,44 @@ def test_fitness_sync_not_connected():
         app.dependency_overrides.clear()
 
 
+def test_steps_sync_from_device_merge():
+    from app.growth_service import app_ymd
+
+    day = app_ymd()
+
+    def uid():
+        return "native-user"
+
+    app.dependency_overrides[get_current_uid] = uid
+    try:
+        r = client.post(
+            "/api/steps/sync-from-device",
+            headers={"Authorization": "Bearer dummy"},
+            json={
+                "source": "health_connect",
+                "days": [{"ymd": day, "steps": 3000}],
+            },
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["source"] == "health_connect"
+        assert body["today_steps"] >= 3000
+
+        r2 = client.post(
+            "/api/steps/sync-from-device",
+            headers={"Authorization": "Bearer dummy"},
+            json={
+                "source": "health_connect",
+                "days": [{"ymd": day, "steps": 2500}],
+            },
+        )
+        assert r2.status_code == 200
+        assert r2.json()["today_steps"] >= 3000
+        assert r2.json()["delta_applied"] == 0
+    finally:
+        app.dependency_overrides.clear()
+
+
 def test_fitness_sync_mock(monkeypatch):
     def uid():
         return "fitness-user-3"

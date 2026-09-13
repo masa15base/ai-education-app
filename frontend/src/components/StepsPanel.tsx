@@ -22,6 +22,17 @@ import {
   type FitnessStatus,
 } from '@/lib/fitnessApi';
 import {
+  checkNativeHealthAvailable,
+  nativeHealthLabel,
+  openNativeHealthSettings,
+  type NativeHealthAvailability,
+} from '@/lib/nativeHealth';
+import { isNativeApp } from '@/lib/platform';
+import {
+  ensureNativeHealthReady,
+  syncNativeStepsToServer,
+} from '@/lib/stepsNativeSync';
+import {
   fetchStepsWeek,
   putStepsToday,
   type StepsWeekDay,
@@ -125,6 +136,11 @@ export function StepsPanel({
   const [busy, setBusy] = useState(false);
   const [fitnessStatus, setFitnessStatus] = useState<FitnessStatus | null>(null);
   const [fitnessBusy, setFitnessBusy] = useState(false);
+  const [nativeHealth, setNativeHealth] = useState<NativeHealthAvailability | null>(
+    null,
+  );
+  const [nativeBusy, setNativeBusy] = useState(false);
+  const onNative = isNativeApp();
   const prevStepsRef = useRef(todaySteps);
   const prevGoalReachedRef = useRef(todaySteps >= stepsGoal);
 
@@ -157,24 +173,33 @@ export function StepsPanel({
   useEffect(() => {
     if (!loggedIn) {
       setFitnessStatus(null);
+      setNativeHealth(null);
       return;
     }
     let cancelled = false;
     void (async () => {
       try {
+        if (onNative) {
+          const availability = await checkNativeHealthAvailable();
+          if (!cancelled) setNativeHealth(availability);
+          return;
+        }
         const user = getAuth().currentUser;
         if (!user) return;
         const token = await user.getIdToken();
         const status = await fetchFitnessStatus(token);
         if (!cancelled) setFitnessStatus(status);
       } catch {
-        if (!cancelled) setFitnessStatus(null);
+        if (!cancelled) {
+          setFitnessStatus(null);
+          setNativeHealth(null);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [loggedIn, refreshKey]);
+  }, [loggedIn, refreshKey, onNative]);
 
   useEffect(() => {
     const ymd = todayYmd ?? jstYmd();
@@ -205,6 +230,42 @@ export function StepsPanel({
       prevGoalReachedRef.current = false;
     }
   }, [todaySteps, stepsGoal, isGoalReached, displayName, todayYmd]);
+
+  const runNativeSync = async (opts?: { silent?: boolean }) => {
+    if (!loggedIn || nativeBusy) return;
+    setNativeBusy(true);
+    try {
+      const ready = await ensureNativeHealthReady();
+      if (!ready) {
+        if (!opts?.silent) {
+          toast({
+            title: `${nativeHealthLabel()} の許可が必要です`,
+            description: '設定画面から歩数の読み取りを許可してください。',
+            variant: 'destructive',
+          });
+        }
+        return;
+      }
+      const result = await syncNativeStepsToServer({ force: true });
+      if (result.synced && result.todaySteps != null) {
+        onStepsUpdated(result.todaySteps);
+        if (!opts?.silent && (result.delta ?? 0) > 0) {
+          toast({
+            title: '歩数を同期しました',
+            description: `+${(result.delta ?? 0).toLocaleString()} 歩を反映`,
+          });
+        }
+      } else if (!opts?.silent && result.reason) {
+        toast({
+          title: '歩数の同期に失敗しました',
+          description: result.reason,
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setNativeBusy(false);
+    }
+  };
 
   const connectGoogleFit = async () => {
     const user = getAuth().currentUser;
@@ -360,7 +421,48 @@ export function StepsPanel({
         </div>
       )}
 
-      {loggedIn && fitnessStatus?.configured && (
+      {loggedIn && onNative && (
+        <div className="surface-muted text-left mb-4">
+          <p className="text-sm font-bold text-navy-dark mb-2">
+            自動取り込み（{nativeHealthLabel()}）
+          </p>
+          {nativeHealth?.available ? (
+            <>
+              <p className="text-xs text-gray-600 mb-2">
+                端末の歩数が自動でサーバーに反映されます（アプリ表示時・15分間隔）。
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-full text-xs"
+                  disabled={nativeBusy}
+                  onClick={() => void runNativeSync()}
+                >
+                  今すぐ同期
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full text-xs"
+                  disabled={nativeBusy}
+                  onClick={() => void openNativeHealthSettings()}
+                >
+                  設定を開く
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-gray-600">
+              {nativeHealth?.reason ??
+                `${nativeHealthLabel()} が利用できません。端末の設定を確認してください。`}
+            </p>
+          )}
+        </div>
+      )}
+
+      {loggedIn && !onNative && fitnessStatus?.configured && (
         <div className="surface-muted text-left mb-4">
           <p className="text-sm font-bold text-navy-dark mb-2">自動取り込み（Google Fit）</p>
           {fitnessStatus.connected ? (
@@ -412,7 +514,7 @@ export function StepsPanel({
         </div>
       )}
 
-      {loggedIn && fitnessStatus && !fitnessStatus.configured && (
+      {loggedIn && !onNative && fitnessStatus && !fitnessStatus.configured && (
         <p className="text-[11px] text-gray-500 mb-4">
           自動取り込みは管理者が Google Fit OAuth を設定すると有効になります。
         </p>
