@@ -14,6 +14,8 @@
 | `backend/` | REST API（`app.main:app`） |
 | `scripts/` | リポジトリ横断の運用・機能テストスクリプト |
 | `docs/` | 仕様メモ（例: キャラ画像生成） |
+| `docs/grok-bots/` | PM / Frontend / Backend / QA の Grok Bot 設計（役割・権限・プロンプト・GitHub 運用） |
+| `AGENTS.md` | Cloud Agents / Grok Bots 向け共通ガイド |
 
 ---
 
@@ -340,6 +342,18 @@ python scripts/upload_question_bank.py --stats-only
 ```
 
 シード再生成: `python app/scripts/generate_questions_csv.py`
+
+---
+
+## Grok Bot 運用（PM / Frontend / Backend / QA）
+
+Cursor Automations 向けの 4 Bot 設計・貼り付け用プロンプト・ラベル定義は次を参照:
+
+- 設計一式: [docs/grok-bots/README.md](docs/grok-bots/README.md)
+- ラベル作成: `bash scripts/setup_github_labels.sh`
+- Issue / PR テンプレ: `.github/ISSUE_TEMPLATE/`、`.github/PULL_REQUEST_TEMPLATE.md`
+
+ハンドオフはラベル `bot/pm` → `bot/frontend` / `bot/backend` → `bot/qa`。Merge と本番デプロイは人間のみです。
 
 ---
 
