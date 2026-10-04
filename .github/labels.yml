@@ -1,0 +1,71 @@
+# Synced conceptually with docs/grok-bots/labels.yml
+# Apply: bash scripts/setup_github_labels.sh
+
+- name: area/frontend
+  color: "1D76DB"
+  description: UI / Vite / Capacitor
+- name: area/backend
+  color: "0E8A16"
+  description: FastAPI / DB / server
+- name: area/docs
+  color: "0075CA"
+  description: Documentation only
+- name: area/infra
+  color: "5319E7"
+  description: Deploy / env / CI
+
+- name: bot/pm
+  color: "FBCA04"
+  description: Trigger PM Grok Bot
+- name: bot/frontend
+  color: "A2EEEF"
+  description: Trigger Frontend Grok Bot
+- name: bot/backend
+  color: "BFDADC"
+  description: Trigger Backend Grok Bot
+- name: bot/qa
+  color: "D4C5F9"
+  description: Trigger QA Grok Bot
+
+- name: priority/p0
+  color: "B60205"
+  description: Production / data integrity risk
+- name: priority/p1
+  color: "D93F0B"
+  description: Major user journey / time-sensitive
+- name: priority/p2
+  color: "FBCA04"
+  description: Normal priority
+- name: priority/p3
+  color: "FEF2C0"
+  description: Nice to have
+
+- name: needs-ac
+  color: "E4E669"
+  description: Acceptance criteria incomplete
+- name: needs-human
+  color: "D93F0B"
+  description: Bot must stop; human decision required
+- name: blocked
+  color: "000000"
+  description: Waiting on external dependency
+
+- name: qa:pass
+  color: "0E8A16"
+  description: QA Bot verified AC
+- name: qa:fail
+  color: "B60205"
+  description: QA Bot found failures
+
+- name: size/xs
+  color: "CFD3D7"
+  description: Trivial change
+- name: size/s
+  color: "CFD3D7"
+  description: Small change
+- name: size/m
+  color: "CFD3D7"
+  description: Medium change
+- name: size/l
+  color: "CFD3D7"
+  description: Large change

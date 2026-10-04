@@ -1,0 +1,77 @@
+name: Bug report
+description: 不具合報告（再現と期待結果を書く）
+title: "[Bug] "
+labels: ["bug", "bot/pm"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 要約
+      placeholder: クイズ完了後に XP が反映されない
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 再現手順
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待結果
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の結果
+    validations:
+      required: true
+  - type: dropdown
+    id: env
+    attributes:
+      label: 環境
+      options:
+        - 本番（Firebase Hosting / Heroku）
+        - ローカル
+        - Capacitor Android
+        - Capacitor iOS
+        - 不明
+    validations:
+      required: true
+  - type: textarea
+    id: ac
+    attributes:
+      label: 受け入れ条件（修正完了の定義）
+      value: |
+        - [ ] 再現手順で期待結果になる
+        - [ ] 関連テストが通る
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 想定エリア
+      options:
+        - frontend
+        - backend
+        - frontend + backend（分割が必要）
+        - 不明（PM Bot に判断してほしい）
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 優先度（仮）
+      options:
+        - p1
+        - p0
+        - p2
+        - p3
+    validations:
+      required: true
