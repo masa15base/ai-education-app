@@ -5,7 +5,8 @@
 
 ## ラベル体系
 
-`scripts/setup_github_labels.sh` / `.github/labels.yml` で管理する。
+`scripts/setup_github_labels.sh` / `.github/labels.yml` で管理する。  
+ラベル作成にはリポジトリの **write 権限付き `gh`** が必要（read-only トークンでは 403 になる）。リポジトリ管理者がローカルまたは権限のある環境で実行する。
 
 ### エリア
 
